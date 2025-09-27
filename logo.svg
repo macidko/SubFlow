@@ -1,0 +1,23 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gLogo" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2ecc71"/>
+      <stop offset="33%" stop-color="#f1c40f"/>
+      <stop offset="66%" stop-color="#f39c12"/>
+      <stop offset="100%" stop-color="#e74c3c"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Simple dark background -->
+  <rect width="256" height="256" rx="48" fill="#071025"/>
+
+  <!-- Big centered "Sub" -->
+  <text x="128" y="140" text-anchor="middle" fill="url(#gLogo)" font-family="Segoe UI, Arial, sans-serif" font-size="96" font-weight="900">Sub</text>
+
+  <!-- Small descriptor -->
+  <text x="128" y="170" text-anchor="middle" fill="#8f9aa6" font-family="Segoe UI, Arial, sans-serif" font-size="14">subtitle colorer</text>
+
+  <!-- Gradient bar showcasing green->red -->
+  <rect x="48" y="190" width="160" height="12" rx="6" fill="url(#gLogo)"/>
+
+</svg>

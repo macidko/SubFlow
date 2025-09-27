@@ -1,0 +1,172 @@
+/* YouTube Subtitle Colorer - Anti-Glitch Optimized */
+
+/* Core word styling - minimal impact on YouTube's layout */
+.subtitle-word {
+  cursor: text;
+  display: inline;
+  position: relative;
+  /* NO padding, margin, or transform to prevent layout shifts */
+  transition: none; /* Disable transitions that cause glitches */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Enhanced hover effects */
+.subtitle-word:hover {
+  transform: translateY(-0.5px);
+  transition: transform 0.1s ease;
+}
+
+/* Clean Ctrl pressed effects - no layout shift */
+body.ctrl-pressed .subtitle-word {
+  cursor: pointer;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 2px;
+  outline: 1px solid rgba(59, 130, 246, 0.3);
+  outline-offset: -1px; /* Prevents layout shift */
+  transition: all 0.15s ease;
+}
+
+body.ctrl-pressed .subtitle-known {
+  background: rgba(5, 150, 105, 0.1);
+  outline: 1px solid rgba(5, 150, 105, 0.4);
+  outline-offset: -1px;
+}
+
+body.ctrl-pressed .subtitle-unknown {
+  background: rgba(220, 38, 38, 0.1);
+  outline: 1px solid rgba(220, 38, 38, 0.4);
+  outline-offset: -1px;
+}
+
+/* Clean text-based word highlighting */
+.subtitle-known {
+  color: #059669 !important; /* Green-600 */
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(5, 150, 105, 0.1);
+  transition: color 0.15s ease;
+}
+
+.subtitle-unknown {
+  color: #dc2626 !important; /* Red-600 */
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(220, 38, 38, 0.1);
+  transition: color 0.15s ease;
+}
+
+.subtitle-word-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  min-width: 160px;
+  opacity: 0;
+  transform: scale(0.95) translateY(-5px);
+  animation: menuFadeIn 0.15s ease forwards;
+  overflow: hidden;
+}
+
+@keyframes menuFadeIn {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.subtitle-word-menu button {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.subtitle-word-menu button:last-child {
+  border-bottom: none;
+}
+
+.subtitle-word-menu button:hover {
+  background: #f9fafb;
+}
+
+.subtitle-word-menu button:first-child:hover {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.subtitle-word-menu button:nth-child(2):hover {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.subtitle-word-menu button:last-child:hover {
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+/* Simple arrow pointing to the word */
+.subtitle-word-menu::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid white;
+}
+
+/* Override YouTube subtitle styles when needed */
+.ytp-caption-segment .subtitle-word {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Enhanced tooltip for better UX */
+.subtitle-tooltip {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(17, 24, 39, 0.95);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 10000;
+  max-width: 280px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transform: translateX(20px);
+  animation: tooltipSlideIn 0.4s ease forwards;
+}
+
+@keyframes tooltipSlideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Word hover effects for better feedback - enhanced */
+body.ctrl-pressed .subtitle-word:hover {
+  transform: translateY(-0.5px);
+}
