@@ -1,6 +1,6 @@
 // Background service worker for YouTube Subtitle Colorer
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('YouTube Subtitle Colorer extension installed');
+  console.log('SubFlow extension installed');
 });
 
 // Handle messages from content script and popup
@@ -15,5 +15,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Keep the service worker alive
 chrome.runtime.onStartup.addListener(() => {
-  console.log('YouTube Subtitle Colorer extension started');
+  console.log('SubFlow extension started');
 });

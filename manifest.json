@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Subtitle Colorer",
+  "name": "SubFlow - Smart Subtitle Colorer",
   "version": "2.0.0",
-  "description": "YouTube altyazıları için modern ve gelişmiş kelime renklendirici - Anti-glitch optimizasyonlu",
+  "description": "YouTube altyazılarında kelimeleri akıllıca renklendiren modern araç - bilinen ve öğrenilecek kelimeleri ayırt eder",
   "permissions": [
     "storage",
     "activeTab"

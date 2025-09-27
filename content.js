@@ -48,7 +48,7 @@ class SubtitleColorer {
       this.isActive = data.isActive !== false;
       this.pauseOnHover = data.pauseOnHover !== false;
       
-      console.log(`SubtitleColorer initialized: ${this.knownWords.size} known, ${this.unknownWords.size} unknown words`);
+
     } catch (error) {
       console.error('Failed to initialize SubtitleColorer:', error);
       this.knownWords = new Set();
@@ -111,7 +111,7 @@ class SubtitleColorer {
     // Process existing subtitles
     this.processSubtitles();
     
-    console.log('YouTube observers established');
+
   }
 
   setupCaptionObserver(ytPlayer) {
@@ -173,7 +173,7 @@ class SubtitleColorer {
       });
       
       if (unprocessedElements.length > 0) {
-        console.log(`Found ${unprocessedElements.length} truly unprocessed subtitles`);
+
         this.processSubtitles();
       }
     }, 2000); // Less frequent since we're more accurate now
@@ -685,7 +685,7 @@ class SubtitleColorer {
     const checkUrlChange = () => {
       const currentUrl = location.href;
       if (currentUrl !== lastUrl) {
-        console.log('YouTube navigation detected');
+
         lastUrl = currentUrl;
         this.cleanup();
         setTimeout(() => this.setupObservers(), 1500);
@@ -816,7 +816,7 @@ if (document.readyState === 'loading') {
 }
 
 async function initializeExtension() {
-  console.log('🎬 YouTube Subtitle Colorer: Starting initialization...');
+  console.log('� SubFlow: Starting initialization...');
   
   // Wait for YouTube to load
   const waitForYouTube = () => {
@@ -846,11 +846,8 @@ async function initializeExtension() {
     return true; // Keep the message channel open for async responses
   });
   
-  console.log('🎬 YouTube Subtitle Colorer initialized successfully!');
-  console.log('🎬 Test commands:');
-  console.log('  - subtitleColorer.knownWords.size // Check known words count');
-  console.log('  - subtitleColorer.processedElements.size // Check processed elements');
-  console.log('  - subtitleColorer.isActive // Check if active');
+  console.log('� SubFlow initialized successfully!');
+
 }
 
 // Message handler function - separated to reduce complexity

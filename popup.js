@@ -61,9 +61,8 @@ class PopupUI {
       this.setupEventListeners();
       this.updateUI();
       
-      console.log('Modern popup UI initialized');
+      
     } catch (error) {
-      console.error('Failed to initialize popup:', error);
       this.showNotification('Başlatma hatası', 'error');
     }
   }
@@ -406,13 +405,12 @@ class PopupUI {
               unknownWords: Array.from(this.unknownWords)
             });
           } catch (error) {
-            console.warn('Could not notify content script:', error);
+            // Content script might not be ready
           }
         }
       }
       
     } catch (error) {
-      console.error('Failed to toggle word status:', error);
       this.showNotification('Kelime durumu değiştirilemedi', 'error');
     }
   }
@@ -434,7 +432,6 @@ class PopupUI {
         unknownWords: Array.from(this.unknownWords)
       });
     } catch (error) {
-      console.error('Failed to save words:', error);
       throw error;
     }
   }
@@ -534,7 +531,6 @@ class PopupUI {
   showNotification(message, type = 'info') {
     // Simple notification using the browser's built-in notification
     // Could be enhanced with a custom notification system
-    console.log(`[${type.toUpperCase()}] ${message}`);
   }
 
   escapeHtml(text) {

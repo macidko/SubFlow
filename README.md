@@ -1,16 +1,18 @@
-# YouTube Subtitle Colorer
+# SubFlow
 
-YouTube videolarında altyazı kelimelerini "Biliyorum" ve "Bilmiyorum" olarak işaretleyip renklendirebileceğiniz Chrome eklentisi. Dil öğrenimini desteklemek için geliştirilmiştir.
+YouTube altyazılarında kelimeleri akıllıca renklendiren modern Chrome eklentisi. Dil öğrenimini desteklemek için tasarlanmıştır.
 
 ## Kullanım
 
-1. YouTube'da altyazılı bir video açın
-2. Extension'ın aktif olduğundan emin olun (popup'tan kontrol edebilirsiniz)
-3. Altyazılardaki kelimelere **Ctrl+Click** yapın:
-   - Video otomatik duraklayacak
-   - 0.5 saniye sonra kelimenin üstünde menü açılacak
-4. Menüden seçiminizi yapın:
-   - ✅ **Biliyorum** - Kelimeyi yeşil renkle işaretler
-   - ❌ **Bilmiyorum** - Kelimeyi kırmızı renkle işaretler
-   - Mouse'u kelimeden çektiğinizde video devam eder
-5. Alternatif: **Ctrl+Sol tık** ile de menü açabilirsiniz
+1. **YouTube'da altyazılı video açın**
+2. **Extension aktif mi kontrol edin** (popup'tan bakabilirsiniz)
+3. **Kelime işaretleme**:
+   - Altyazıdaki kelimeye **Ctrl+Tık** yapın
+   - Video otomatik duraklar ve kelime menüsü açılır
+   - **✅ Biliyorum** (yeşil) veya **❓ Öğreneceğim** (turuncu) seçin
+   - Video devam eder
+
+## Kurulum
+
+1. Chrome Web Store'dan yükleyin (yakında)
+2. Geliştirici modu için: Kaynak kodu indirin ve `chrome://extensions` üzerinden yükleyin
