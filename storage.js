@@ -110,20 +110,30 @@ class StorageManager {
       });
     });
     
-    return Promise.all(promises);
+    await Promise.all(promises);
+    await this.syncToChromeStorage();
+    
+    return uniqueWords;
   }
 
   async removeWord(word, type) {
     if (!this.db) await this.openDB();
-    
+
+    const cleanWord = typeof word === 'string' ? word.toLowerCase().trim() : '';
+    if (!cleanWord) {
+      return;
+    }
+
     const transaction = this.db.transaction([this.storeName], 'readwrite');
     const store = transaction.objectStore(this.storeName);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.delete(`${type}_${word}`);
+
+    await new Promise((resolve, reject) => {
+      const request = store.delete(`${type}_${cleanWord}`);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+
+    await this.syncToChromeStorage();
   }
 
   // Add known word method

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtitle Colorer</title>
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --primary: #6366f1;
+            --primary-hover: #5b59d6;
+            --primary-light: #e0e7ff;
+            --secondary: #64748b;
+            
+            --known-color: #10b981;
+            --known-bg: #f0fdf4;
+            --known-border: #bbf7d0;
+            
+            --learning-color: #f59e0b;
+            --learning-bg: #fffbeb;
+            --learning-border: #fed7aa;
+            
+            --surface: #ffffff;
+            --surface-hover: #f8fafc;
+            --surface-alt: #f1f5f9;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            
+            --radius: 8px;
+            --radius-lg: 12px;
+            --radius-full: 9999px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 380px;
+            min-height: 540px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+
+        .popup {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            margin: 8px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.inactive {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: var(--radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+        }
+
+        .stat-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .stat-icon.known {
+            background: var(--known-color);
+            color: white;
+        }
+
+        .stat-icon.learning {
+            background: var(--learning-color);
+            color: white;
+        }
+
+        /* Content */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-nav {
+            display: flex;
+            background: var(--surface-alt);
+            padding: 4px;
+            margin: 16px 16px 0;
+            border-radius: var(--radius);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .words-section {
+            flex: 1;
+            overflow: hidden;
+            padding: 16px;
+            padding-top: 12px;
+        }
+
+        .words-list {
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #e2e8f0 100%);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .empty-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .empty-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Word Items */
+        .word-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .word-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--border);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .word-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .word-indicator.known {
+            background: var(--known-color);
+        }
+
+        .word-indicator.learning {
+            background: var(--learning-color);
+        }
+
+        .word-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .word-text {
+            font-weight: 500;
+            margin-bottom: 2px;
+            color: var(--text);
+        }
+
+        .word-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Actions */
+        .actions {
+            padding: 16px;
+            border-top: 1px solid var(--border-light);
+            background: var(--surface-hover);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .action-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .action-btn.danger {
+            color: var(--danger);
+            border-color: #fecaca;
+        }
+
+        .action-btn.danger:hover {
+            background: #fef2f2;
+            border-color: var(--danger);
+        }
+
+        /* Scrollbar */
+        .words-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .words-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .words-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .words-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .word-item.animate {
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        .word-item.animate:nth-child(n) {
+            animation-delay: calc(0.05s * var(--index, 0));
+        }
+    </style>
+</head>
+<body>
+    <div class="popup">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-top">
+                    <div class="logo">
+                        <div class="logo-icon">🎨</div>
+                        <span>Subtitle Colorer</span>
+                    </div>
+                    <div class="status-badge">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">Aktif</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-icon known">✓</div>
+                        <span>Bilinen: <span id="knownCount">0</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon learning">📚</div>
+                        <span>Öğrenilen: <span id="learningCount">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <nav class="tab-nav">
+                <button class="tab-btn active" id="allTab" data-tab="all">
+                    Tümü (<span id="totalCount">0</span>)
+                </button>
+                <button class="tab-btn" id="knownTab" data-tab="known">
+                    Bilinen (<span id="knownTabCount">0</span>)
+                </button>
+                <button class="tab-btn" id="learningTab" data-tab="learning">
+                    Öğrenilen (<span id="learningTabCount">0</span>)
+                </button>
+            </nav>
+
+            <div class="words-section">
+                <div class="words-list" id="wordsList">
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">🎯</div>
+                        <div class="empty-title">Henüz kelime yok</div>
+                        <div class="empty-subtitle">YouTube'da Ctrl+Tık ile kelime eklemeye başlayın</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <div class="action-row">
+                <button class="action-btn primary" id="refreshBtn">
+                    <span>🔄</span>
+                    YouTube'u Yenile
+                </button>
+                <button class="action-btn" id="toggleBtn">
+                    <span id="toggleIcon">⏸</span>
+                    <span id="toggleText">Duraklat</span>
+                </button>
+            </div>
+            <div class="action-row">
+                <button class="action-btn" id="importBtn">
+                    <span>📥</span>
+                    İçe Aktar
+                </button>
+                <button class="action-btn" id="exportBtn">
+                    <span>📤</span>
+                    Dışa Aktar
+                </button>
+                <button class="action-btn danger" id="clearBtn">
+                    <span>🗑</span>
+                    Temizle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json" />
+    
+    <script src="storage.js"></script>
+    <script src="popup_new.js"></script>
+</body>
+</html>

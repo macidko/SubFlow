@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YouTube Subtitle Colorer",
-  "version": "1.5.0",
-  "description": "YouTube altyazıları için anti-glitch optimizasyonlu kelime renklendirici",
+  "version": "2.0.0",
+  "description": "YouTube altyazıları için modern ve gelişmiş kelime renklendirici - Anti-glitch optimizasyonlu",
   "permissions": [
     "storage",
     "activeTab"
@@ -11,7 +11,7 @@
     {
       "matches": ["*://*.youtube.com/*"],
       "js": ["storage.js", "content.js"],
-      "css": ["styles.css"],
+      "css": ["styles_modern.css"],
       "run_at": "document_end"
     }
   ],
@@ -19,7 +19,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup_new.html",
     "default_title": "Subtitle Colorer",
     "default_icon": {
       "16": "icon16.png",

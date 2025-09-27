@@ -1,53 +1,60 @@
-// YouTube Subtitle Colorer - Popup UI Script
+// YouTube Subtitle Colorer - Compact Popup UI
 class PopupUI {
   constructor() {
     this.isActive = true;
-    // Use chrome.storage instead of IndexedDB for popup
-    this.storageManager = null;
     this.currentTab = null;
     this.knownWords = new Set();
     this.unknownWords = new Set();
     
-    // DOM elements
+    // DOM elements for compact design
     this.elements = {
-      statusDot: document.getElementById('statusDot'),
-      statusText: document.getElementById('statusText'),
-      toggleSwitch: document.getElementById('toggleSwitch'),
+      statusIndicator: document.getElementById('statusIndicator'),
+      toggleBtn: document.getElementById('toggleBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
-      wordCount: document.getElementById('wordCount'),
-      wordsContainer: document.getElementById('wordsContainer'),
+      knownCount: document.getElementById('knownCount'),
+      unknownCount: document.getElementById('unknownCount'),
+      wordsList: document.getElementById('wordsList'),
       emptyState: document.getElementById('emptyState'),
-      clearBtn: document.getElementById('clearBtn')
+      knownSection: document.getElementById('knownSection'),
+      unknownSection: document.getElementById('unknownSection'),
+      knownWordsList: document.getElementById('knownWordsList'),
+      unknownWordsList: document.getElementById('unknownWordsList'),
+      knownSectionCount: document.getElementById('knownSectionCount'),
+      unknownSectionCount: document.getElementById('unknownSectionCount'),
+      importBtn: document.getElementById('importBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      fileInput: document.getElementById('fileInput')
     };
-    
-    this.init();
+  }
+
+  static async bootstrap() {
+    const ui = new PopupUI();
+    try {
+      await ui.init();
+    } catch (error) {
+      console.error('Popup bootstrap failed:', error);
+      ui.showNotification('Popup başlatılamadı', 'error');
+    }
+    return ui;
   }
 
   async init() {
     try {
-      // Load saved data directly from chrome.storage
       await this.loadStoredData();
-      
-      // Check current tab and connection
       await this.checkConnection();
-      
-      // Setup event listeners
       this.setupEventListeners();
+      this.updateUI();
       
-      // Update UI
-      this.updateWordsList();
-      this.updateToggleState();
-      
-      console.log('Popup UI initialized successfully');
+      console.log('Compact popup UI initialized');
     } catch (error) {
       console.error('Failed to initialize popup UI:', error);
-      this.showError('Başlatma hatası');
+      this.showNotification('Başlatma hatası', 'error');
     }
   }
 
   async loadStoredData() {
     try {
-      // Load words from chrome.storage (managed by content script)
       const data = await chrome.storage.local.get({
         knownWords: [],
         unknownWords: [],
@@ -57,8 +64,6 @@ class PopupUI {
       this.knownWords = new Set(data.knownWords || []);
       this.unknownWords = new Set(data.unknownWords || []);
       this.isActive = data.isActive !== false;
-      
-      console.log(`Loaded ${this.knownWords.size} known and ${this.unknownWords.size} unknown words`);
     } catch (error) {
       console.error('Failed to load stored data:', error);
       this.knownWords = new Set();
@@ -68,99 +73,104 @@ class PopupUI {
 
   async checkConnection() {
     try {
-      // Get current active tab
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       this.currentTab = tab;
       
-      // Check if we're on YouTube
       const isYouTube = tab?.url?.includes('youtube.com');
+      const isActive = isYouTube && this.isActive;
       
-      if (isYouTube) {
-        this.updateStatus('connected', 'YouTube\'a bağlı');
-        
-        // Try to communicate with content script
+      this.updateStatus(isActive);
+      
+      if (isYouTube && this.isActive) {
         try {
           await chrome.tabs.sendMessage(tab.id, { type: 'ping' });
-          this.updateStatus('connected', 'Altyazı renklendirici aktif');
         } catch (error) {
-          this.updateStatus('disconnected', 'YouTube sayfasını yenileyin');
+          console.warn('Content script not available:', error);
         }
-      } else {
-        this.updateStatus('disconnected', 'YouTube sayfasına gidin');
       }
     } catch (error) {
       console.error('Connection check failed:', error);
-      this.updateStatus('disconnected', 'Bağlantı hatası');
+      this.updateStatus(false);
     }
   }
 
   setupEventListeners() {
-    // Toggle switch
-    this.elements.toggleSwitch.addEventListener('click', () => {
-      this.toggleExtension();
-    });
+    // Toggle button
+    if (this.elements.toggleBtn) {
+      this.elements.toggleBtn.addEventListener('click', () => {
+        this.toggleExtension();
+      });
+    }
 
     // Refresh button
-    this.elements.refreshBtn.addEventListener('click', () => {
-      this.refreshPage();
-    });
+    if (this.elements.refreshBtn) {
+      this.elements.refreshBtn.addEventListener('click', () => {
+        this.refreshPage();
+      });
+    }
+
+    // Import button
+    if (this.elements.importBtn) {
+      this.elements.importBtn.addEventListener('click', () => {
+        this.elements.fileInput.click();
+      });
+    }
+
+    // Export button
+    if (this.elements.exportBtn) {
+      this.elements.exportBtn.addEventListener('click', () => {
+        this.exportData();
+      });
+    }
 
     // Clear button
-    this.elements.clearBtn.addEventListener('click', () => {
-      this.clearAllWords();
-    });
+    if (this.elements.clearBtn) {
+      this.elements.clearBtn.addEventListener('click', () => {
+        this.clearAllWords();
+      });
+    }
 
-    // Listen for storage changes
+    // File input
+    if (this.elements.fileInput) {
+      this.elements.fileInput.addEventListener('change', (e) => {
+        this.importData(e.target.files[0]);
+      });
+    }
+
+    // Storage changes
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === 'local' || namespace === 'sync') {
-        this.handleStorageChange(changes);
+        void this.handleStorageChange(changes);
       }
     });
 
-    // Periodically refresh data
+    // Periodic updates
     setInterval(() => {
       this.refreshData();
-    }, 2000);
-
-    // Periodically check connection
-    setInterval(() => {
-      this.checkConnection();
-    }, 5000);
+    }, 3000);
   }
 
   async toggleExtension() {
     try {
       this.isActive = !this.isActive;
       
-      // Save state
       await chrome.storage.local.set({ isActive: this.isActive });
+      this.updateStatus(this.isActive);
       
-      // Update UI
-      this.updateToggleState();
-      
-      // Notify content script
       if (this.currentTab?.id && this.currentTab.url?.includes('youtube.com')) {
         try {
           await chrome.tabs.sendMessage(this.currentTab.id, {
             type: 'toggle',
             isActive: this.isActive
           });
-          
-          this.updateStatus(
-            this.isActive ? 'connected' : 'disconnected',
-            this.isActive ? 'Renklendirme aktif' : 'Renklendirme kapalı'
-          );
         } catch (error) {
-          console.log('Content script not available, state saved');
+          console.warn('Toggle message failed:', error);
         }
       }
-      
-      console.log(`Extension ${this.isActive ? 'activated' : 'deactivated'}`);
     } catch (error) {
-      console.error('Failed to toggle extension:', error);
-      // Revert state on error
+      console.error('Toggle failed:', error);
       this.isActive = !this.isActive;
-      this.updateToggleState();
+      this.updateStatus(this.isActive);
     }
   }
 
@@ -168,59 +178,113 @@ class PopupUI {
     try {
       if (this.currentTab?.id) {
         await chrome.tabs.reload(this.currentTab.id);
-        
-        // Show feedback
-        this.elements.refreshBtn.textContent = '🔄 Sayfa yenileniyor...';
-        this.elements.refreshBtn.style.opacity = '0.7';
-        
-        setTimeout(() => {
-          this.elements.refreshBtn.textContent = '🔄 Sayfayı Yenile ve Yeniden Bağlan';
-          this.elements.refreshBtn.style.opacity = '1';
-          window.close(); // Close popup after refresh
-        }, 1000);
+        window.close();
       }
     } catch (error) {
-      console.error('Failed to refresh page:', error);
+      console.error('Refresh failed:', error);
     }
   }
 
   async clearAllWords() {
-    if (!confirm('Tüm kayıtlı kelimeleri silmek istediğinizden emin misiniz?')) {
+    if (!confirm('Tüm kelimeleri silmek istediğinizden emin misiniz?')) {
       return;
     }
 
     try {
-      // Clear from chrome.storage
       await chrome.storage.local.set({
         knownWords: [],
         unknownWords: []
       });
       
-      // Clear local sets
       this.knownWords.clear();
       this.unknownWords.clear();
+      this.updateUI();
       
-      // Update UI
-      this.updateWordsList();
-      
-      // Notify content script to clear IndexedDB too
       if (this.currentTab?.id && this.currentTab.url?.includes('youtube.com')) {
         try {
-          await chrome.tabs.sendMessage(this.currentTab.id, { 
-            type: 'clearAllWords' 
-          });
+          await chrome.tabs.sendMessage(this.currentTab.id, { type: 'clearAllWords' });
         } catch (error) {
-          console.log('Content script not available for clear');
+          console.warn('Clear message failed:', error);
         }
       }
       
-      // Show feedback
-      this.showTemporaryMessage('Tüm kelimeler temizlendi', 'success');
-      
+      this.showNotification('Tüm kelimeler temizlendi', 'success');
     } catch (error) {
-      console.error('Failed to clear words:', error);
-      this.showTemporaryMessage('Temizleme hatası', 'error');
+      console.error('Clear failed:', error);
+      this.showNotification('Temizleme hatası', 'error');
     }
+  }
+
+  async exportData() {
+    try {
+      const data = {
+        knownWords: Array.from(this.knownWords),
+        unknownWords: Array.from(this.unknownWords),
+        exportDate: new Date().toISOString(),
+        version: '1.5.0'
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subtitle-colorer-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      this.showNotification('Veriler dışa aktarıldı', 'success');
+    } catch (error) {
+      console.error('Export failed:', error);
+      this.showNotification('Dışa aktarma hatası', 'error');
+    }
+  }
+
+  async importData(file) {
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      if (!data.knownWords || !data.unknownWords) {
+        throw new Error('Invalid file format');
+      }
+      
+      const knownWords = Array.isArray(data.knownWords) ? data.knownWords : [];
+      const unknownWords = Array.isArray(data.unknownWords) ? data.unknownWords : [];
+      
+      await chrome.storage.local.set({
+        knownWords,
+        unknownWords
+      });
+      
+      this.knownWords = new Set(knownWords);
+      this.unknownWords = new Set(unknownWords);
+      this.updateUI();
+      
+      // Notify content script
+      if (this.currentTab?.id && this.currentTab.url?.includes('youtube.com')) {
+        try {
+          await chrome.tabs.sendMessage(this.currentTab.id, { 
+            type: 'importData',
+            data: { knownWords, unknownWords }
+          });
+        } catch (error) {
+          console.warn('Import message failed:', error);
+        }
+      }
+      
+      this.showNotification(`${knownWords.length + unknownWords.length} kelime içe aktarıldı`, 'success');
+    } catch (error) {
+      console.error('Import failed:', error);
+      this.showNotification('İçe aktarma hatası', 'error');
+    }
+    
+    // Clear file input
+    this.elements.fileInput.value = '';
   }
 
   async refreshData() {
@@ -231,86 +295,111 @@ class PopupUI {
       await this.loadStoredData();
       
       if (this.knownWords.size !== oldKnownSize || this.unknownWords.size !== oldUnknownSize) {
-        this.updateWordsList();
+        this.updateUI();
       }
     } catch (error) {
-      console.error('Failed to refresh data:', error);
+      console.error('Refresh failed:', error);
     }
   }
 
-  updateStatus(status, message) {
-    const isConnected = status === 'connected';
+  updateStatus(isActive) {
+    if (this.elements.statusIndicator) {
+      this.elements.statusIndicator.classList.toggle('active', isActive);
+    }
     
-    this.elements.statusDot.className = `status-dot ${isConnected ? 'status-connected' : 'status-disconnected'}`;
-    this.elements.statusText.textContent = message;
+    if (this.elements.toggleBtn) {
+      this.elements.toggleBtn.classList.toggle('active', isActive);
+      this.elements.toggleBtn.textContent = isActive ? '⏸' : '▶';
+      this.elements.toggleBtn.title = isActive ? 'Kapat' : 'Aç';
+    }
   }
 
-  updateToggleState() {
-    this.elements.toggleSwitch.classList.toggle('active', this.isActive);
+  updateUI() {
+    this.updateCounts();
+    this.updateWordsList();
+  }
+
+  updateCounts() {
+    if (this.elements.knownCount) {
+      this.elements.knownCount.textContent = this.knownWords.size;
+    }
+    
+    if (this.elements.unknownCount) {
+      this.elements.unknownCount.textContent = this.unknownWords.size;
+    }
   }
 
   updateWordsList() {
     const totalWords = this.knownWords.size + this.unknownWords.size;
-    this.elements.wordCount.textContent = totalWords.toString();
+    
+    if (!this.elements.wordsList) return;
     
     if (totalWords === 0) {
-      this.elements.emptyState.style.display = 'block';
-      this.elements.clearBtn.style.display = 'none';
-      this.elements.wordsContainer.innerHTML = this.elements.emptyState.outerHTML;
+      this.elements.emptyState.style.display = 'flex';
+      this.elements.knownSection.style.display = 'none';
+      this.elements.unknownSection.style.display = 'none';
       return;
     }
-
+    
     this.elements.emptyState.style.display = 'none';
-    this.elements.clearBtn.style.display = 'block';
-
-    // Create words list
-    const wordsHtml = this.createWordsListHTML();
-    this.elements.wordsContainer.innerHTML = wordsHtml;
-  }
-
-  createWordsListHTML() {
-    let html = '';
     
-    // Sort words alphabetically
-    const allWords = [
-      ...Array.from(this.knownWords).map(word => ({ word, type: 'known' })),
-      ...Array.from(this.unknownWords).map(word => ({ word, type: 'unknown' }))
-    ].sort((a, b) => a.word.localeCompare(b.word, 'tr', { sensitivity: 'accent' }));
-    
-    // Group by first letter for better organization
-    const groupedWords = {};
-    allWords.forEach(({ word, type }) => {
-      const firstLetter = word.charAt(0).toUpperCase();
-      if (!groupedWords[firstLetter]) {
-        groupedWords[firstLetter] = [];
-      }
-      groupedWords[firstLetter].push({ word, type });
-    });
-
-    // Render grouped words
-    Object.keys(groupedWords).sort().forEach(letter => {
-      if (Object.keys(groupedWords).length > 3) {
-        html += `<div style="font-size: 11px; font-weight: 600; opacity: 0.6; margin: 10px 0 5px 0; padding-left: 5px;">${letter}</div>`;
-      }
+    // Update known words section
+    if (this.knownWords.size > 0) {
+      this.elements.knownSection.style.display = 'block';
+      this.elements.knownSectionCount.textContent = this.knownWords.size;
       
-      groupedWords[letter].forEach(({ word, type }) => {
-        const colorStyle = this.getWordColorStyle(type);
-        
-        html += `
-          <div class="word-item" data-word="${this.escapeHtml(word)}" data-type="${type}">
+      const knownWordsArray = Array.from(this.knownWords)
+        .sort((a, b) => a.localeCompare(b, 'tr'));
+      
+      this.elements.knownWordsList.innerHTML = knownWordsArray.map(word => `
+        <div class="word-item">
+          <div class="word-main">
+            <span class="word-color known"></span>
             <span class="word-text">${this.escapeHtml(word)}</span>
-            <div class="word-color" style="background-color: ${colorStyle}"></div>
           </div>
-        `;
-      });
-    });
-
-    return html;
+        </div>
+      `).join('');
+    } else {
+      this.elements.knownSection.style.display = 'none';
+    }
+    
+    // Update unknown words section
+    if (this.unknownWords.size > 0) {
+      this.elements.unknownSection.style.display = 'block';
+      this.elements.unknownSectionCount.textContent = this.unknownWords.size;
+      
+      const unknownWordsArray = Array.from(this.unknownWords)
+        .sort((a, b) => a.localeCompare(b, 'tr'));
+      
+      this.elements.unknownWordsList.innerHTML = unknownWordsArray.map(word => `
+        <div class="word-item">
+          <div class="word-main">
+            <span class="word-color unknown"></span>
+            <span class="word-text">${this.escapeHtml(word)}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      this.elements.unknownSection.style.display = 'none';
+    }
   }
 
-  getWordColorStyle(type) {
-    // Match the colors from content script
-    return type === 'known' ? '#2ecc71' : '#f39c12';
+  async handleStorageChange(changes) {
+    let shouldUpdate = false;
+    
+    if (changes.hasOwnProperty('knownWords') || changes.hasOwnProperty('unknownWords')) {
+      shouldUpdate = true;
+    }
+    
+    if (changes.hasOwnProperty('isActive')) {
+      this.isActive = changes.isActive.newValue !== false;
+      this.updateStatus(this.isActive);
+    }
+    
+    if (shouldUpdate) {
+      await this.loadStoredData();
+      this.updateUI();
+    }
   }
 
   escapeHtml(text) {
@@ -319,85 +408,59 @@ class PopupUI {
     return div.innerHTML;
   }
 
-  handleStorageChange(changes) {
-    let shouldUpdateWords = false;
-
-    // Check if word data changed
-    if (changes.hasOwnProperty('knownWords') || changes.hasOwnProperty('unknownWords')) {
-      shouldUpdateWords = true;
-    }
-
-    // Check if active state changed
-    if (changes.hasOwnProperty('isActive')) {
-      this.isActive = changes.isActive.newValue !== false;
-      this.updateToggleState();
-    }
-
-    if (shouldUpdateWords) {
-      // Reload words and update UI
-      this.loadStoredData().then(() => {
-        this.updateWordsList();
-      });
-    }
-  }
-
-  showTemporaryMessage(message, type = 'info') {
-    // Create or update temporary message element
-    let msgElement = document.getElementById('tempMessage');
-    
-    if (!msgElement) {
-      msgElement = document.createElement('div');
-      msgElement.id = 'tempMessage';
-      msgElement.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        z-index: 1000;
-        transition: all 0.3s ease;
-      `;
-      document.body.appendChild(msgElement);
-    }
-    
+  showNotification(message, type = 'info') {
+    // Simple notification system
     const colors = {
-      success: { bg: 'rgba(46, 204, 113, 0.9)', border: '#2ecc71' },
-      error: { bg: 'rgba(231, 76, 60, 0.9)', border: '#e74c3c' },
-      info: { bg: 'rgba(52, 152, 219, 0.9)', border: '#3498db' }
+      error: '#ef4444',
+      success: '#10b981',
+      info: '#2563eb'
     };
     
-    const color = colors[type] || colors.info;
-    msgElement.style.backgroundColor = color.bg;
-    msgElement.style.border = `1px solid ${color.border}`;
-    msgElement.textContent = message;
-    msgElement.style.opacity = '1';
+    const bgColor = colors[type] || colors.info;
     
-    // Auto hide after 3 seconds
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 8px 12px;
+      background: ${bgColor};
+      color: white;
+      border-radius: 6px;
+      font-size: 12px;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Animate in
     setTimeout(() => {
-      msgElement.style.opacity = '0';
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Remove after delay
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(20px)';
       setTimeout(() => {
-        if (msgElement.parentNode) {
-          msgElement.parentNode.removeChild(msgElement);
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
         }
       }, 300);
-    }, 3000);
-  }
-
-  showError(message) {
-    this.updateStatus('disconnected', message);
-    console.error(message);
+    }, 2500);
   }
 }
 
-// Initialize popup when DOM is ready
+// Initialize popup
 document.addEventListener('DOMContentLoaded', () => {
-  new PopupUI();
+  PopupUI.bootstrap();
 });
 
-// Handle popup close
+// Cleanup
 window.addEventListener('beforeunload', () => {
   console.log('Popup closing');
 });

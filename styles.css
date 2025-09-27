@@ -62,14 +62,15 @@ body.ctrl-pressed .subtitle-unknown {
   position: fixed;
   background: white;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   z-index: 10000;
-  min-width: 160px;
+  min-width: 180px;
   opacity: 0;
   transform: scale(0.95) translateY(-5px);
   animation: menuFadeIn 0.15s ease forwards;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
 @keyframes menuFadeIn {
@@ -87,9 +88,13 @@ body.ctrl-pressed .subtitle-unknown {
   color: #374151;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
   text-align: left;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .subtitle-word-menu button:last-child {
@@ -97,22 +102,58 @@ body.ctrl-pressed .subtitle-unknown {
 }
 
 .subtitle-word-menu button:hover {
-  background: #f9fafb;
+  background: #f8fafc;
 }
 
-.subtitle-word-menu button:first-child:hover {
-  background: #f0fdf4;
-  color: #166534;
+.subtitle-word-menu button.known-action {
+  color: #059669;
 }
 
-.subtitle-word-menu button:nth-child(2):hover {
+.subtitle-word-menu button.known-action:hover {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.subtitle-word-menu button.unknown-action {
+  color: #dc2626;
+}
+
+.subtitle-word-menu button.unknown-action:hover {
   background: #fef2f2;
-  color: #991b1b;
+  color: #b91c1c;
 }
 
-.subtitle-word-menu button:last-child:hover {
-  background: #f9fafb;
+.subtitle-word-menu button.remove-action {
   color: #6b7280;
+}
+
+.subtitle-word-menu button.remove-action:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.button-icon {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.word-status-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.word-status-badge.known {
+  background: rgba(5, 150, 105, 0.1);
+  color: #047857;
+}
+
+.word-status-badge.unknown {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
 }
 
 /* Simple arrow pointing to the word */

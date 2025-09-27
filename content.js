@@ -460,60 +460,145 @@ class SubtitleColorer {
     const menu = document.createElement('div');
     menu.className = 'subtitle-word-menu';
     
-    // Position menu above the word
+    // Position menu above the word with better positioning
     const rect = wordSpan.getBoundingClientRect();
-    const menuX = rect.left + (rect.width / 2);
-    const menuY = rect.top - 10;
+    const menuWidth = 200; // Approximate menu width
+    const menuHeight = 120; // Approximate menu height
+    
+    // Calculate horizontal position (center above word)
+    let menuX = rect.left + (rect.width / 2) - (menuWidth / 2);
+    
+    // Calculate vertical position (above word with some margin)
+    let menuY = rect.top - menuHeight - 8;
+    
+    // Ensure menu stays in viewport
+    const viewportWidth = window.innerWidth;
+    
+    // Adjust horizontal position if needed
+    if (menuX < 10) menuX = 10;
+    if (menuX + menuWidth > viewportWidth - 10) menuX = viewportWidth - menuWidth - 10;
+    
+    // If menu would go above viewport, show it below the word instead
+    if (menuY < 10) {
+      menuY = rect.bottom + 8;
+    }
     
     menu.style.cssText = `
       left: ${menuX}px;
       top: ${menuY}px;
-      transform: translateX(-50%);
     `;
 
     const isKnown = this.knownWords.has(word);
     const isUnknown = this.unknownWords.has(word);
 
+    // Add modern word title with status
+    const wordTitle = document.createElement('div');
+    wordTitle.style.cssText = `
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    `;
+    
+    const wordText = document.createElement('span');
+    wordText.textContent = word;
+    wordText.style.cssText = 'font-size: 14px; font-weight: 700; color: #0f172a;';
+    wordTitle.appendChild(wordText);
+    
+    if (isKnown || isUnknown) {
+      const badge = document.createElement('span');
+      badge.className = `word-status-badge ${isKnown ? 'known' : 'unknown'}`;
+      badge.textContent = isKnown ? 'Bilinen' : 'Öğrenilecek';
+      wordTitle.appendChild(badge);
+    }
+    
+    menu.appendChild(wordTitle);
+
     const actions = [];
     if (!isKnown) {
       actions.push({ 
-        text: 'Mark as Known', 
+        text: 'Bilinen Olarak İşaretle',
+        icon: '✓',
+        className: 'known-action',
         action: () => this.markAsKnown(word)
       });
     }
     if (!isUnknown) {
       actions.push({ 
-        text: 'Mark as Unknown', 
+        text: 'Öğrenilecek Olarak İşaretle',
+        icon: '?',
+        className: 'unknown-action', 
         action: () => this.markAsUnknown(word)
       });
     }
     if (isKnown || isUnknown) {
       actions.push({ 
-        text: 'Remove from List', 
+        text: 'Listeden Kaldır',
+        icon: '✕',
+        className: 'remove-action',
         action: () => this.removeFromList(word)
       });
     }
 
-    actions.forEach(({ text, action }) => {
+    actions.forEach(({ text, icon, className, action }) => {
       const button = document.createElement('button');
-      button.textContent = text;
+      button.className = className;
+      button.setAttribute('type', 'button');
+      
+      const buttonText = document.createElement('span');
+      buttonText.textContent = text;
+      buttonText.style.cssText = 'flex: 1; text-align: left;';
+      button.appendChild(buttonText);
+      
+      const buttonIcon = document.createElement('span');
+      buttonIcon.className = 'button-icon';
+      buttonIcon.textContent = icon;
+      button.appendChild(buttonIcon);
+      
       button.addEventListener('click', (e) => {
         e.stopPropagation();
+        e.preventDefault();
         action();
         this.hideWordMenu();
       });
+      
+      // Add hover effects
+      button.addEventListener('mouseenter', () => {
+        button.style.transform = 'translateX(2px)';
+      });
+      
+      button.addEventListener('mouseleave', () => {
+        button.style.transform = 'translateX(0)';
+      });
+      
       menu.appendChild(button);
     });
 
     document.body.appendChild(menu);
     this.currentMenu = menu;
     
-    // Auto-hide after 4 seconds
+    // Add click outside handler
+    const handleClickOutside = (e) => {
+      if (!menu.contains(e.target)) {
+        this.hideWordMenu();
+        document.removeEventListener('click', handleClickOutside);
+      }
+    };
+    
+    // Delay to prevent immediate hide
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+    
+    // Auto-hide after 6 seconds
     setTimeout(() => {
       if (this.currentMenu === menu) {
         this.hideWordMenu();
+        document.removeEventListener('click', handleClickOutside);
       }
-    }, 4000);
+    }, 6000);
   }
 
   hideWordMenu() {
@@ -781,6 +866,25 @@ async function initializeExtension() {
           window.subtitleColorer.updateWordColors();
         }
         sendResponse({ status: 'ok' });
+        break;
+        
+      case 'importData':
+        if (window.subtitleColorer?.storageManager && request.data) {
+          try {
+            await window.subtitleColorer.storageManager.importData(request.data);
+            // Update local sets
+            window.subtitleColorer.knownWords = new Set(request.data.knownWords || []);
+            window.subtitleColorer.unknownWords = new Set(request.data.unknownWords || []);
+            // Update colors
+            window.subtitleColorer.updateWordColors();
+            sendResponse({ status: 'ok' });
+          } catch (error) {
+            console.error('Import failed:', error);
+            sendResponse({ status: 'error', message: error.message });
+          }
+        } else {
+          sendResponse({ status: 'error', message: 'No data provided' });
+        }
         break;
         
       case 'getStatus':
