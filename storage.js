@@ -1,253 +1,208 @@
-// IndexedDB Storage Manager for Subtitle Colorer
+// Chrome Extension Storage Manager for Subtitle Colorer
+// Pure Chrome Storage - NO IndexedDB
 class StorageManager {
   constructor() {
-    this.dbName = 'SubtitleColorerDB';
-    this.dbVersion = 1;
-    this.storeName = 'words';
-    this.db = null;
+    // Pure chrome.storage implementation
+    this.storageKey = 'subtitleColorer';
   }
 
   async init() {
-    try {
-      await this.openDB();
-      await this.migrateFromChromeStorage();
-    } catch (error) {
-      console.error('StorageManager initialization failed:', error);
-      throw error;
-    }
-  }
-
-  async openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
-      
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve(this.db);
-      };
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        
-        // Create object store
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-          store.createIndex('type', 'type', { unique: false });
-          store.createIndex('word', 'word', { unique: false });
-          store.createIndex('timestamp', 'timestamp', { unique: false });
-        }
-      };
-    });
+    // No initialization needed for chrome.storage
+    console.log('StorageManager: Using Chrome Extension Storage');
   }
 
   async saveWord(word, type) {
-    if (!this.db) await this.openDB();
     if (!word || typeof word !== 'string') return;
     
     const cleanWord = word.toLowerCase().trim();
-    if (cleanWord.length < 2) return; // Skip very short words
+    if (cleanWord.length < 2) return;
     
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-    
-    const wordData = {
-      id: `${type}_${cleanWord}`,
-      word: cleanWord,
-      type: type, // 'known' or 'unknown'
-      timestamp: Date.now()
-    };
-    
-    // Save to IndexedDB
-    await new Promise((resolve, reject) => {
-      const request = store.put(wordData);
-      request.onsuccess = () => resolve(wordData);
-      request.onerror = () => reject(request.error);
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: []
     });
     
-    // Also save to chrome.storage for popup access
-    await this.syncToChromeStorage();
+    const knownWords = new Set(data.knownWords || []);
+    const unknownWords = new Set(data.unknownWords || []);
     
-    return wordData;
-  }
-
-  async syncToChromeStorage() {
-    try {
-      const allWords = await this.getAllWords();
-      await chrome.storage.local.set({
-        knownWords: allWords.knownWords,
-        unknownWords: allWords.unknownWords
-      });
-    } catch (error) {
-      console.error('Failed to sync to chrome.storage:', error);
+    if (type === 'known') {
+      knownWords.add(cleanWord);
+      unknownWords.delete(cleanWord);
+    } else if (type === 'unknown') {
+      unknownWords.add(cleanWord);
+      knownWords.delete(cleanWord);
     }
-  }
-
-  // Batch save for better performance during import
-  async saveWords(words, type) {
-    if (!this.db) await this.openDB();
-    if (!Array.isArray(words)) return;
     
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-
-    const uniqueWords = Array.from(new Set(words.map(word => word.toLowerCase().trim())));
-    
-    const promises = uniqueWords.map(cleanWord => {
-      if (cleanWord.length < 2) return Promise.resolve();
-      
-      const wordData = {
-        id: `${type}_${cleanWord}`,
-        word: cleanWord,
-        type: type,
-        timestamp: Date.now()
-      };
-      
-      return new Promise((resolve, reject) => {
-        const request = store.put(wordData);
-        request.onsuccess = () => resolve(wordData);
-        request.onerror = () => reject(request.error);
-      });
+    await chrome.storage.local.set({
+      knownWords: Array.from(knownWords),
+      unknownWords: Array.from(unknownWords)
     });
     
-    await Promise.all(promises);
-    await this.syncToChromeStorage();
-    
-    return uniqueWords;
+    return { word: cleanWord, type };
   }
 
   async removeWord(word, type) {
-    if (!this.db) await this.openDB();
-
-    const cleanWord = typeof word === 'string' ? word.toLowerCase().trim() : '';
-    if (!cleanWord) {
-      return;
-    }
-
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-
-    await new Promise((resolve, reject) => {
-      const request = store.delete(`${type}_${cleanWord}`);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+    if (!word || typeof word !== 'string') return;
+    
+    const cleanWord = word.toLowerCase().trim();
+    if (!cleanWord) return;
+    
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: []
     });
-
-    await this.syncToChromeStorage();
+    
+    const knownWords = new Set(data.knownWords || []);
+    const unknownWords = new Set(data.unknownWords || []);
+    
+    if (type === 'known' || !type) {
+      knownWords.delete(cleanWord);
+    }
+    if (type === 'unknown' || !type) {
+      unknownWords.delete(cleanWord);
+    }
+    
+    await chrome.storage.local.set({
+      knownWords: Array.from(knownWords),
+      unknownWords: Array.from(unknownWords)
+    });
   }
 
-  // Add known word method
   async addKnownWord(word) {
     return this.saveWord(word, 'known');
   }
 
-  // Add unknown word method  
   async addUnknownWord(word) {
     return this.saveWord(word, 'unknown');
   }
 
-  async getWordsByType(type) {
-    if (!this.db) await this.openDB();
-    
-    const transaction = this.db.transaction([this.storeName], 'readonly');
-    const store = transaction.objectStore(this.storeName);
-    const index = store.index('type');
-    
-    return new Promise((resolve, reject) => {
-      const request = index.getAll(type);
-      request.onsuccess = () => {
-        const words = request.result.map(item => item.word);
-        resolve(words);
-      };
-      request.onerror = () => reject(request.error);
-    });
-  }
-
   async getAllWords() {
-    if (!this.db) await this.openDB();
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: []
+    });
     
-    const [knownWords, unknownWords] = await Promise.all([
-      this.getWordsByType('known'),
-      this.getWordsByType('unknown')
-    ]);
-    
-    return { knownWords, unknownWords };
+    return {
+      knownWords: data.knownWords || [],
+      unknownWords: data.unknownWords || []
+    };
   }
 
-  async clearWordsByType(type) {
-    if (!this.db) await this.openDB();
-    
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-    const index = store.index('type');
-    
-    return new Promise((resolve, reject) => {
-      const request = index.openCursor(type);
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          cursor.delete();
-          cursor.continue();
-        } else {
-          resolve();
-        }
-      };
-      request.onerror = () => reject(request.error);
+  async getWordsByType(type) {
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: []
     });
+    
+    if (type === 'known') {
+      return data.knownWords || [];
+    } else if (type === 'unknown') {
+      return data.unknownWords || [];
+    }
+    
+    return [];
   }
 
   async clearAll() {
-    await this.clearWordsByType('known');
-    await this.clearWordsByType('unknown');
-    
-    // Also clear chrome.storage
     await chrome.storage.local.set({
       knownWords: [],
       unknownWords: []
     });
   }
 
-  async exportData() {
-    try {
-      const data = await this.getAllWords();
-      return {
+  async clearWordsByType(type) {
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: []
+    });
+    
+    if (type === 'known') {
+      await chrome.storage.local.set({
+        knownWords: [],
+        unknownWords: data.unknownWords || []
+      });
+    } else if (type === 'unknown') {
+      await chrome.storage.local.set({
         knownWords: data.knownWords || [],
-        unknownWords: data.unknownWords || [],
-        exportDate: new Date().toISOString(),
-        source: 'indexeddb',
-        version: this.dbVersion
-      };
-    } catch (error) {
-      console.error('Export data error:', error);
-      throw new Error('Failed to export data from IndexedDB');
+        unknownWords: []
+      });
     }
+  }
+
+  async saveWords(words, type) {
+    if (!Array.isArray(words)) return;
+    
+    const cleanWords = words
+      .map(word => typeof word === 'string' ? word.toLowerCase().trim() : '')
+      .filter(word => word.length >= 2);
+    
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: []
+    });
+    
+    const knownWords = new Set(data.knownWords || []);
+    const unknownWords = new Set(data.unknownWords || []);
+    
+    if (type === 'known') {
+      cleanWords.forEach(word => {
+        knownWords.add(word);
+        unknownWords.delete(word);
+      });
+    } else if (type === 'unknown') {
+      cleanWords.forEach(word => {
+        unknownWords.add(word);
+        knownWords.delete(word);
+      });
+    }
+    
+    await chrome.storage.local.set({
+      knownWords: Array.from(knownWords),
+      unknownWords: Array.from(unknownWords)
+    });
+    
+    return cleanWords;
+  }
+
+  async exportData() {
+    const data = await this.getAllWords();
+    return {
+      knownWords: data.knownWords || [],
+      unknownWords: data.unknownWords || [],
+      exportDate: new Date().toISOString(),
+      source: 'chrome-storage',
+      version: '2.0'
+    };
   }
 
   async importData(importData) {
     try {
-      if (!Array.isArray(importData.knownWords) || !Array.isArray(importData.unknownWords)) {
-        throw new Error('Invalid import data format - arrays expected');
+      if (!importData || typeof importData !== 'object') {
+        throw new Error('Invalid import data format');
       }
 
-      console.log(`Importing ${importData.knownWords.length} known words and ${importData.unknownWords.length} unknown words`);
+      const knownWords = Array.isArray(importData.knownWords) ? importData.knownWords : [];
+      const unknownWords = Array.isArray(importData.unknownWords) ? importData.unknownWords : [];
+
+      console.log(`Importing ${knownWords.length} known words and ${unknownWords.length} unknown words`);
 
       // Clear existing data first
-      await this.clearWordsByType('known');
-      await this.clearWordsByType('unknown');
+      await this.clearAll();
 
-      // Use batch operations for better performance
-      const validKnownWords = importData.knownWords.filter(word => 
+      // Filter valid words
+      const validKnownWords = knownWords.filter(word => 
         typeof word === 'string' && word.trim().length >= 2
       );
       
-      const validUnknownWords = importData.unknownWords.filter(word => 
+      const validUnknownWords = unknownWords.filter(word => 
         typeof word === 'string' && word.trim().length >= 2
       );
 
-      await Promise.all([
-        this.saveWords(validKnownWords, 'known'),
-        this.saveWords(validUnknownWords, 'unknown')
-      ]);
+      // Save the imported words
+      await chrome.storage.local.set({
+        knownWords: validKnownWords,
+        unknownWords: validUnknownWords
+      });
 
       console.log(`Import completed: ${validKnownWords.length} known, ${validUnknownWords.length} unknown words imported`);
     } catch (error) {
@@ -256,32 +211,6 @@ class StorageManager {
     }
   }
 
-  // Migrate existing Chrome Storage data to IndexedDB (one-time)
-  async migrateFromChromeStorage() {
-    try {
-      const data = await chrome.storage.local.get(['knownWords', 'unknownWords', 'migrated']);
-      
-      if (!data.migrated && data.knownWords && data.knownWords.length > 0) {
-        console.log('Migrating existing data to IndexedDB...');
-        
-        for (const word of data.knownWords) {
-          await this.saveWord(word.toLowerCase().trim(), 'known');
-        }
-        
-        for (const word of data.unknownWords || []) {
-          await this.saveWord(word.toLowerCase().trim(), 'unknown');
-        }
-        
-        // Mark as migrated
-        await chrome.storage.local.set({ migrated: true });
-        console.log(`Migration completed: ${data.knownWords.length} known, ${(data.unknownWords || []).length} unknown words`);
-      }
-    } catch (error) {
-      console.error('Migration failed:', error);
-    }
-  }
-
-  // Get storage stats
   async getStats() {
     const data = await this.getAllWords();
     return {
@@ -290,4 +219,9 @@ class StorageManager {
       totalWords: data.knownWords.length + data.unknownWords.length
     };
   }
+}
+
+// Export for use in other files if needed
+if (typeof window !== 'undefined') {
+  window.StorageManager = StorageManager;
 }

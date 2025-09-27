@@ -10,8 +10,8 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["storage.js", "content.js"],
-      "css": ["styles_modern.css"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
       "run_at": "document_end"
     }
   ],
@@ -19,7 +19,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup_new.html",
+    "default_popup": "popup.html",
     "default_title": "Subtitle Colorer",
     "default_icon": {
       "16": "icon16.png",

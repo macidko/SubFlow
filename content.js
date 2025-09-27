@@ -6,7 +6,6 @@ class SubtitleColorer {
     // Core data
     this.knownWords = new Set();
     this.unknownWords = new Set();
-    this.storageManager = new StorageManager();
     
     // State management
     this.isActive = true;
@@ -37,13 +36,17 @@ class SubtitleColorer {
 
   async init() {
     try {
-      await this.storageManager.init();
-      const data = await this.storageManager.getAllWords();
-      this.knownWords = new Set(data.knownWords);
-      this.unknownWords = new Set(data.unknownWords);
+      const data = await chrome.storage.local.get({
+        knownWords: [],
+        unknownWords: [],
+        isActive: true,
+        pauseOnHover: true
+      });
       
-      const settings = await chrome.storage.local.get({ pauseOnHover: true });
-      this.pauseOnHover = settings.pauseOnHover !== false;
+      this.knownWords = new Set(data.knownWords || []);
+      this.unknownWords = new Set(data.unknownWords || []);
+      this.isActive = data.isActive !== false;
+      this.pauseOnHover = data.pauseOnHover !== false;
       
       console.log(`SubtitleColorer initialized: ${this.knownWords.size} known, ${this.unknownWords.size} unknown words`);
     } catch (error) {
@@ -616,22 +619,36 @@ class SubtitleColorer {
   async markAsKnown(word) {
     this.knownWords.add(word);
     this.unknownWords.delete(word);
-    await this.storageManager.addKnownWord(word);
+    
+    await chrome.storage.local.set({
+      knownWords: Array.from(this.knownWords),
+      unknownWords: Array.from(this.unknownWords)
+    });
+    
     this.updateWordColors();
   }
 
   async markAsUnknown(word) {
     this.unknownWords.add(word);
     this.knownWords.delete(word);
-    await this.storageManager.addUnknownWord(word);
+    
+    await chrome.storage.local.set({
+      knownWords: Array.from(this.knownWords),
+      unknownWords: Array.from(this.unknownWords)
+    });
+    
     this.updateWordColors();
   }
 
   async removeFromList(word) {
     this.knownWords.delete(word);
     this.unknownWords.delete(word);
-    await this.storageManager.removeWord(word, 'known');
-    await this.storageManager.removeWord(word, 'unknown');
+    
+    await chrome.storage.local.set({
+      knownWords: Array.from(this.knownWords),
+      unknownWords: Array.from(this.unknownWords)
+    });
+    
     this.updateWordColors();
   }
 
@@ -824,82 +841,8 @@ async function initializeExtension() {
   await window.subtitleColorer.init();
   
   // Setup message listener for popup communication
-  chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-    if (!window.subtitleColorer) {
-      sendResponse({ status: 'error', message: 'Extension not initialized' });
-      return;
-    }
-    
-    switch (message.type) {
-      case 'ping':
-        sendResponse({ status: 'ok', active: window.subtitleColorer.isActive });
-        break;
-        
-      case 'toggle':
-        window.subtitleColorer.isActive = message.isActive;
-        if (message.isActive) {
-          window.subtitleColorer.processSubtitles();
-        } else {
-          // Hide all coloring when disabled
-          document.querySelectorAll('.subtitle-known, .subtitle-unknown').forEach(el => {
-            el.classList.remove('subtitle-known', 'subtitle-unknown');
-          });
-        }
-        sendResponse({ status: 'ok', active: window.subtitleColorer.isActive });
-        break;
-        
-      case 'clearColors':
-        // Remove all colored words
-        document.querySelectorAll('.subtitle-word').forEach(span => {
-          span.className = 'subtitle-word';
-        });
-        sendResponse({ status: 'ok' });
-        break;
-        
-      case 'clearAllWords':
-        if (window.subtitleColorer?.storageManager) {
-          await window.subtitleColorer.storageManager.clearAll();
-          // Clear local sets too
-          window.subtitleColorer.knownWords.clear();
-          window.subtitleColorer.unknownWords.clear();
-          // Update colors
-          window.subtitleColorer.updateWordColors();
-        }
-        sendResponse({ status: 'ok' });
-        break;
-        
-      case 'importData':
-        if (window.subtitleColorer?.storageManager && request.data) {
-          try {
-            await window.subtitleColorer.storageManager.importData(request.data);
-            // Update local sets
-            window.subtitleColorer.knownWords = new Set(request.data.knownWords || []);
-            window.subtitleColorer.unknownWords = new Set(request.data.unknownWords || []);
-            // Update colors
-            window.subtitleColorer.updateWordColors();
-            sendResponse({ status: 'ok' });
-          } catch (error) {
-            console.error('Import failed:', error);
-            sendResponse({ status: 'error', message: error.message });
-          }
-        } else {
-          sendResponse({ status: 'error', message: 'No data provided' });
-        }
-        break;
-        
-      case 'getStatus':
-        sendResponse({ 
-          status: 'ok',
-          active: window.subtitleColorer.isActive,
-          knownWords: window.subtitleColorer.knownWords.size,
-          unknownWords: window.subtitleColorer.unknownWords.size
-        });
-        break;
-        
-      default:
-        sendResponse({ status: 'error', message: 'Unknown message type' });
-    }
-    
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    handleMessage(message, sendResponse);
     return true; // Keep the message channel open for async responses
   });
   
@@ -908,4 +851,124 @@ async function initializeExtension() {
   console.log('  - subtitleColorer.knownWords.size // Check known words count');
   console.log('  - subtitleColorer.processedElements.size // Check processed elements');
   console.log('  - subtitleColorer.isActive // Check if active');
+}
+
+// Message handler function - separated to reduce complexity
+async function handleMessage(message, sendResponse) {
+  if (!window.subtitleColorer) {
+    sendResponse({ status: 'error', message: 'Extension not initialized' });
+    return;
+  }
+  
+  try {
+    switch (message.type) {
+      case 'ping':
+        sendResponse({ status: 'ok', active: window.subtitleColorer.isActive });
+        break;
+        
+      case 'toggle':
+        await handleToggle(message, sendResponse);
+        break;
+        
+      case 'clearColors':
+        handleClearColors(sendResponse);
+        break;
+        
+      case 'clearAllWords':
+        await handleClearAllWords(sendResponse);
+        break;
+        
+      case 'importData':
+        await handleImportData(message, sendResponse);
+        break;
+        
+      case 'wordsUpdated':
+        handleWordsUpdated(message, sendResponse);
+        break;
+        
+      case 'getStatus':
+        handleGetStatus(sendResponse);
+        break;
+        
+      default:
+        sendResponse({ status: 'error', message: 'Unknown message type' });
+    }
+  } catch (error) {
+    console.error('Message handler error:', error);
+    sendResponse({ status: 'error', message: error.message });
+  }
+}
+
+async function handleToggle(message, sendResponse) {
+  window.subtitleColorer.isActive = message.isActive;
+  if (message.isActive) {
+    window.subtitleColorer.processSubtitles();
+  } else {
+    document.querySelectorAll('.subtitle-known, .subtitle-unknown').forEach(el => {
+      el.classList.remove('subtitle-known', 'subtitle-unknown');
+    });
+  }
+  sendResponse({ status: 'ok', active: window.subtitleColorer.isActive });
+}
+
+function handleClearColors(sendResponse) {
+  document.querySelectorAll('.subtitle-word').forEach(span => {
+    span.className = 'subtitle-word';
+  });
+  sendResponse({ status: 'ok' });
+}
+
+async function handleClearAllWords(sendResponse) {
+  window.subtitleColorer.knownWords.clear();
+  window.subtitleColorer.unknownWords.clear();
+  
+  await chrome.storage.local.set({
+    knownWords: [],
+    unknownWords: []
+  });
+  
+  window.subtitleColorer.updateWordColors();
+  sendResponse({ status: 'ok' });
+}
+
+async function handleImportData(message, sendResponse) {
+  if (!message.data) {
+    sendResponse({ status: 'error', message: 'No data provided' });
+    return;
+  }
+  
+  if (message.data.knownWords) {
+    window.subtitleColorer.knownWords = new Set(message.data.knownWords);
+  }
+  if (message.data.unknownWords) {
+    window.subtitleColorer.unknownWords = new Set(message.data.unknownWords);
+  }
+  
+  await chrome.storage.local.set({
+    knownWords: Array.from(window.subtitleColorer.knownWords),
+    unknownWords: Array.from(window.subtitleColorer.unknownWords)
+  });
+  
+  window.subtitleColorer.updateWordColors();
+  sendResponse({ status: 'ok' });
+}
+
+function handleWordsUpdated(message, sendResponse) {
+  if (message.knownWords) {
+    window.subtitleColorer.knownWords = new Set(message.knownWords);
+  }
+  if (message.unknownWords) {
+    window.subtitleColorer.unknownWords = new Set(message.unknownWords);
+  }
+  window.subtitleColorer.updateWordColors();
+  sendResponse({ status: 'ok' });
+}
+
+function handleGetStatus(sendResponse) {
+  sendResponse({ 
+    status: 'ok',
+    active: window.subtitleColorer.isActive,
+    knownWords: window.subtitleColorer.knownWords.size,
+    unknownWords: window.subtitleColorer.unknownWords.size
+  });
 }

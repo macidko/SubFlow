@@ -83,16 +83,16 @@ Bu versiyon **tamamen yeniden tasarlandı** ve modern UI/UX prensiplerine göre 
 
 ### Dosya Yapısı
 ```
-├── popup_new.html        # Modern popup arayüzü
-├── popup_new.js          # Popup JavaScript mantığı
-├── styles_modern.css     # Modern CSS stilleri
+├── popup.html            # Modern popup arayüzü
+├── popup.js              # Popup JavaScript mantığı
+├── styles.css            # Modern CSS stilleri
 ├── content.js            # Content script
-├── storage.js            # Storage yönetimi
+├── storage.js            # Chrome Storage yönetimi
 └── manifest.json         # Extension manifestosu
 ```
 
 ### API Kullanımı
-- **Chrome Storage API**: Kelime verilerinin saklanması
+- **Chrome Storage API**: Kelime verilerinin saklanması (IndexedDB yerine)
 - **Chrome Tabs API**: Aktif sekme yönetimi
 - **Message Passing**: Popup-Content iletişimi
 

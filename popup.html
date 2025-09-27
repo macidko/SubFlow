@@ -6,16 +6,42 @@
     <title>Subtitle Colorer</title>
     <style>
         :root {
-            --bg: #fafafa;
+            /* Modern Color Palette */
+            --primary: #6366f1;
+            --primary-hover: #5b59d6;
+            --primary-light: #e0e7ff;
+            --secondary: #64748b;
+            
+            --known-color: #10b981;
+            --known-bg: #f0fdf4;
+            --known-border: #bbf7d0;
+            
+            --learning-color: #f59e0b;
+            --learning-bg: #fffbeb;
+            --learning-border: #fed7aa;
+            
             --surface: #ffffff;
-            --primary: #2563eb;
-            --text: #1f2937;
-            --text-secondary: #6b7280;
-            --border: #e5e7eb;
+            --surface-hover: #f8fafc;
+            --surface-alt: #f1f5f9;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            
             --radius: 8px;
+            --radius-lg: 12px;
+            --radius-full: 9999px;
         }
 
         * {
@@ -25,13 +51,13 @@
         }
 
         body {
-            width: 280px;
-            height: 480px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-            background: var(--bg);
+            width: 380px;
+            min-height: 540px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: var(--text);
-            font-size: 13px;
-            line-height: 1.4;
+            font-size: 14px;
+            line-height: 1.5;
             overflow: hidden;
         }
 
@@ -40,64 +66,157 @@
             display: flex;
             flex-direction: column;
             background: var(--surface);
+            margin: 8px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
         }
 
+        /* Header */
         .header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-shrink: 0;
+            margin-bottom: 12px;
         }
 
-        .title {
-            font-size: 14px;
-            font-weight: 600;
+        .logo {
             display: flex;
             align-items: center;
             gap: 8px;
+            font-weight: 600;
+            font-size: 16px;
         }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: var(--danger);
+            background: #10b981;
+            animation: pulse 2s infinite;
         }
 
-        .status-indicator.active {
-            background: var(--success);
+        .status-dot.inactive {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .controls {
             display: flex;
-            gap: 4px;
+            gap: 8px;
         }
 
-        .btn {
+        .control-btn {
+            width: 32px;
+            height: 32px;
             border: none;
-            background: transparent;
-            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: var(--radius);
             cursor: pointer;
-            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+        }
+
+        .stat-icon {
+            width: 16px;
+            height: 16px;
             border-radius: 4px;
             display: flex;
             align-items: center;
-            font-size: 12px;
-            transition: all 0.15s;
+            justify-content: center;
+            font-size: 10px;
         }
 
-        .btn:hover {
-            background: #f3f4f6;
-            color: var(--text);
-        }
-
-        .btn.active {
-            background: var(--primary);
+        .stat-icon.known {
+            background: var(--known-color);
             color: white;
         }
 
+        .stat-icon.learning {
+            background: var(--learning-color);
+            color: white;
+        }
+
+        /* Content */
         .content {
             flex: 1;
             display: flex;
@@ -105,33 +224,62 @@
             overflow: hidden;
         }
 
-        .stats {
+        .tab-nav {
+            display: flex;
+            background: var(--surface-alt);
+            padding: 4px;
+            margin: 16px 16px 0;
+            border-radius: var(--radius);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Search Section */
+        .search-section {
             padding: 12px 16px;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--surface-hover);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 13px;
+            background: var(--surface);
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .pagination-info {
+            margin-top: 8px;
             font-size: 11px;
-        }
-
-        .stat {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .stat-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-        }
-
-        .stat-dot.known {
-            background: var(--success);
-        }
-
-        .stat-dot.unknown {
-            background: var(--warning);
+            color: var(--text-muted);
+            text-align: center;
         }
 
         .words-section {
@@ -141,279 +289,320 @@
             flex-direction: column;
         }
 
-        .word-section {
-            margin-bottom: 12px;
-        }
-
-        .word-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .section-header {
-            padding: 8px 16px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .section-count {
-            margin-left: auto;
-            background: var(--border);
-            color: var(--text);
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .word-items {
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
-        .words-list {
+        .words-container {
             flex: 1;
             overflow-y: auto;
-            padding: 8px 0;
+            max-height: 280px;
         }
 
-        .word-item {
+        .load-more-btn {
+            width: 100%;
             padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .word-item:last-child {
-            border-bottom: none;
-        }
-
-        .word-item:hover {
-            background: #f8fafc;
-        }
-
-        .word-main {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .word-color {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .word-color.known {
-            background: var(--success);
-        }
-
-        .word-color.unknown {
-            background: var(--warning);
-        }
-
-        .word-text {
-            font-size: 13px;
-            flex: 1;
-        }
-
-        .word-count {
-            font-size: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface-hover);
             color: var(--text-secondary);
-            padding: 2px 6px;
-            background: #f1f5f9;
-            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 8px 0;
         }
 
+        .load-more-btn:hover {
+            background: var(--surface);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .load-more-btn.hidden {
+            display: none;
+        }
+
+        /* Empty State */
         .empty-state {
-            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: var(--text-secondary);
-            padding: 32px 16px;
+            height: 200px;
             text-align: center;
+            color: var(--text-secondary);
         }
 
         .empty-icon {
-            font-size: 24px;
-            margin-bottom: 8px;
-            opacity: 0.5;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #e2e8f0 100%);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
         }
 
-        .empty-text {
-            font-size: 12px;
+        .empty-title {
+            font-weight: 600;
             margin-bottom: 4px;
+            color: var(--text);
         }
 
-        .empty-hint {
-            font-size: 10px;
-            opacity: 0.7;
+        .empty-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
         }
 
+        /* Word Items */
+        .word-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .word-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--border);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .word-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .word-indicator.known {
+            background: var(--known-color);
+        }
+
+        .word-indicator.learning {
+            background: var(--learning-color);
+        }
+
+        .word-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .word-text {
+            font-weight: 500;
+            margin-bottom: 2px;
+            color: var(--text);
+        }
+
+        .word-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Actions */
         .actions {
-            padding: 12px 16px;
-            border-top: 1px solid var(--border);
+            padding: 16px;
+            border-top: 1px solid var(--border-light);
+            background: var(--surface-hover);
+        }
+
+        .action-row {
             display: flex;
             gap: 8px;
-            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        .action-row:last-child {
+            margin-bottom: 0;
         }
 
         .action-btn {
             flex: 1;
-            padding: 8px 12px;
+            padding: 10px 16px;
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text);
             border-radius: var(--radius);
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .action-btn:hover {
             border-color: var(--primary);
             color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
         }
 
         .action-btn.danger {
             color: var(--danger);
-            border-color: var(--danger);
+            border-color: #fecaca;
         }
 
         .action-btn.danger:hover {
-            background: var(--danger);
-            color: white;
+            background: #fef2f2;
+            border-color: var(--danger);
         }
 
-        .words-list::-webkit-scrollbar,
-        .word-items::-webkit-scrollbar {
-            width: 3px;
+        /* Scrollbar */
+        .words-list::-webkit-scrollbar {
+            width: 4px;
         }
 
-        .words-list::-webkit-scrollbar-track,
-        .word-items::-webkit-scrollbar-track {
+        .words-list::-webkit-scrollbar-track {
             background: transparent;
         }
 
-        .words-list::-webkit-scrollbar-thumb,
-        .word-items::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
+        .words-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
         }
 
-        .words-list::-webkit-scrollbar-thumb:hover,
-        .word-items::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        .words-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
 
+        /* Utility Classes */
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         input[type="file"] {
             display: none;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .word-item.animate {
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        .word-item.animate:nth-child(n) {
+            animation-delay: calc(0.05s * var(--index, 0));
         }
     </style>
 </head>
 <body>
     <div class="popup">
         <header class="header">
-            <div class="title">
-                <span class="status-indicator" id="statusIndicator"></span>
-                Subtitle Colorer
-            </div>
-            <div class="controls">
-                <button type="button" class="btn" id="toggleBtn" title="Aç/Kapat">⏸</button>
-                <button type="button" class="btn" id="refreshBtn" title="Yenile">↻</button>
+            <div class="header-content">
+                <div class="header-top">
+                    <div class="logo">
+                        <div class="logo-icon">🎨</div>
+                        <span>Subtitle Colorer</span>
+                    </div>
+                    <div class="status-badge">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">Aktif</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-icon known">✓</div>
+                        <span>Bilinen: <span id="knownCount">0</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon learning">📚</div>
+                        <span>Öğrenilen: <span id="learningCount">0</span></span>
+                    </div>
+                </div>
             </div>
         </header>
 
         <div class="content">
-            <div class="stats">
-                <div class="stat">
-                    <span class="stat-dot known"></span>
-                    <span>Bilinen: <span id="knownCount">0</span></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-dot unknown"></span>
-                    <span>Öğrenilecek: <span id="unknownCount">0</span></span>
+            <nav class="tab-nav">
+                <button class="tab-btn active" id="allTab" data-tab="all">
+                    Tümü (<span id="totalCount">0</span>)
+                </button>
+                <button class="tab-btn" id="knownTab" data-tab="known">
+                    Bilinen (<span id="knownTabCount">0</span>)
+                </button>
+                <button class="tab-btn" id="learningTab" data-tab="learning">
+                    Öğrenilen (<span id="learningTabCount">0</span>)
+                </button>
+            </nav>
+
+            <div class="search-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="Kelime ara...">
+                <div class="pagination-info">
+                    <span id="paginationInfo">0 kelime</span>
                 </div>
             </div>
 
             <div class="words-section">
-                <div class="words-list" id="wordsList">
-                    <div class="empty-state" id="emptyState">
-                        <div class="empty-icon">📖</div>
-                        <div class="empty-text">Henüz kelime yok</div>
-                        <div class="empty-hint">YouTube'da Ctrl+Tık ile kelime ekleyin</div>
-                    </div>
-                    
-                    <div class="word-section" id="knownSection" style="display: none;">
-                        <div class="section-header">
-                            <span class="stat-dot known"></span>
-                            Bilinen Kelimeler
-                            <span class="section-count" id="knownSectionCount">0</span>
+                <div class="words-container">
+                    <div class="words-list" id="wordsList">
+                        <div class="empty-state" id="emptyState">
+                            <div class="empty-icon">🎯</div>
+                            <div class="empty-title">Henüz kelime yok</div>
+                            <div class="empty-subtitle">YouTube'da Ctrl+Tık ile kelime eklemeye başlayın</div>
                         </div>
-                        <div class="word-items" id="knownWordsList"></div>
                     </div>
-                    
-                    <div class="word-section" id="unknownSection" style="display: none;">
-                        <div class="section-header">
-                            <span class="stat-dot unknown"></span>
-                            Öğrenilecek Kelimeler
-                            <span class="section-count" id="unknownSectionCount">0</span>
-                        </div>
-                        <div class="word-items" id="unknownWordsList"></div>
-                    </div>
+                    <button class="load-more-btn hidden" id="loadMoreBtn">Daha Fazla Yükle</button>
                 </div>
             </div>
         </div>
 
         <div class="actions">
-            <button type="button" class="action-btn" id="importBtn">İçe Aktar</button>
-            <button type="button" class="action-btn" id="exportBtn">Dışa Aktar</button>
-            <button type="button" class="action-btn danger" id="clearBtn">Temizle</button>
+            <div class="action-row">
+                <button class="action-btn primary" id="refreshBtn">
+                    <span>🔄</span>
+                    YouTube'u Yenile
+                </button>
+                <button class="action-btn" id="toggleBtn">
+                    <span id="toggleIcon">⏸</span>
+                    <span id="toggleText">Duraklat</span>
+                </button>
+            </div>
+            <div class="action-row">
+                <button class="action-btn" id="importBtn">
+                    <span>📥</span>
+                    İçe Aktar
+                </button>
+                <button class="action-btn" id="exportBtn">
+                    <span>📤</span>
+                    Dışa Aktar
+                </button>
+                <button class="action-btn danger" id="clearBtn">
+                    <span>🗑</span>
+                    Temizle
+                </button>
+            </div>
         </div>
     </div>
 
     <input type="file" id="fileInput" accept=".json" />
-                    <div class="toggle-slider"></div>
-                </div>
-            </div>
-            <button class="primary-btn" id="refreshBtn" type="button">🔄 YouTube sekmesini yenile</button>
-        </section>
-
-        <section class="card word-card">
-            <div class="card-row">
-                <div class="card-title">Kayıtlı Kelimeler</div>
-                <span class="badge" id="wordCount">0</span>
-            </div>
-            <p class="card-subtitle">Son renklendirilen kelimeler listesi</p>
-            <div class="words-container" id="wordsContainer">
-                <div class="empty-state" id="emptyState">
-                    <div class="empty-icon">🎨</div>
-                    <p>Henüz renklendirilen kelime yok</p>
-                    <small>Altyazılı bir YouTube videosu açarak başlayabilirsin</small>
-                </div>
-                <div id="wordList"></div>
-            </div>
-            <button class="clear-btn" id="clearBtn" type="button" style="display: none;">🗑️ Tümünü temizle</button>
-        </section>
-    </div>
-
-    <script src="storage.js"></script>
+    
     <script src="popup.js"></script>
 </body>
 </html>
