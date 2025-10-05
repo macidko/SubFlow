@@ -1,51 +1,55 @@
-// YouTube Subtitle Colorer Popup UI
+// SubFlow - Flat Design Popup UI
 class PopupUI {
   constructor() {
+    // State
     this.isActive = true;
-    this.currentTab = 'all';
-    this.currentTabData = null;
+    this.currentFilter = 'all';
+    this.currentTab = 'home';
     this.knownWords = new Set();
     this.unknownWords = new Set();
     
-    // Pagination and search
-    this.currentPage = 0;
-    this.itemsPerPage = 20;
-    this.searchQuery = '';
-    this.filteredWords = [];
+    // Translation
+    this.showTranslations = true;
+    this.targetLang = 'tr';
+    this.sourceLang = 'en';
+    this.translationService = null;
+    this.translations = new Map();
     
-    // DOM Elements
-    this.elements = {
-      statusDot: document.getElementById('statusDot'),
-      statusText: document.getElementById('statusText'),
-      knownCount: document.getElementById('knownCount'),
-      learningCount: document.getElementById('learningCount'),
-      totalCount: document.getElementById('totalCount'),
-      knownTabCount: document.getElementById('knownTabCount'),
-      learningTabCount: document.getElementById('learningTabCount'),
-      
-      // Tab buttons
-      allTab: document.getElementById('allTab'),
-      knownTab: document.getElementById('knownTab'),
-      learningTab: document.getElementById('learningTab'),
-      
-      wordsList: document.getElementById('wordsList'),
-      emptyState: document.getElementById('emptyState'),
-      
-      // Search and pagination
-      searchInput: document.getElementById('searchInput'),
-      paginationInfo: document.getElementById('paginationInfo'),
-      loadMoreBtn: document.getElementById('loadMoreBtn'),
-      
-      // Action buttons
-      refreshBtn: document.getElementById('refreshBtn'),
-      toggleBtn: document.getElementById('toggleBtn'),
-      toggleIcon: document.getElementById('toggleIcon'),
-      toggleText: document.getElementById('toggleText'),
-      importBtn: document.getElementById('importBtn'),
-      exportBtn: document.getElementById('exportBtn'),
-      clearBtn: document.getElementById('clearBtn'),
-      fileInput: document.getElementById('fileInput')
-    };
+    // Search
+    this.searchQuery = '';
+    
+    // DOM Elements - Main Tabs
+    this.mainTabs = document.querySelectorAll('.main-tab');
+    this.tabPanels = document.querySelectorAll('.tab-panel');
+    
+    // DOM Elements - Home Tab
+    this.statusDot = document.getElementById('statusDot');
+    this.statusText = document.getElementById('statusText');
+    this.targetLangSelect = document.getElementById('targetLang');
+    
+    this.wordTabs = document.querySelectorAll('.word-tab');
+    this.allCount = document.getElementById('allCount');
+    this.knownCount = document.getElementById('knownCount');
+    this.learningCount = document.getElementById('learningCount');
+    
+    this.searchInput = document.getElementById('searchInput');
+    this.wordsList = document.getElementById('wordsList');
+    
+    // DOM Elements - Settings Tab
+    this.toggleExtension = document.getElementById('toggleExtension');
+    this.isActiveCheckbox = document.getElementById('isActiveCheckbox');
+    this.toggleTranslations = document.getElementById('toggleTranslations');
+    this.showTranslationsCheckbox = document.getElementById('showTranslationsCheckbox');
+    
+    this.knownColorInput = document.getElementById('knownColor');
+    this.learningColorInput = document.getElementById('learningColor');
+    
+    this.refreshBtn = document.getElementById('refreshBtn');
+    this.translateAllBtn = document.getElementById('translateAllBtn');
+    this.exportBtn = document.getElementById('exportBtn');
+    this.importBtn = document.getElementById('importBtn');
+    this.clearBtn = document.getElementById('clearBtn');
+    this.fileInput = document.getElementById('fileInput');
   }
 
   static async create() {
@@ -56,504 +60,429 @@ class PopupUI {
 
   async init() {
     try {
+      this.translationService = await TranslationService.create();
       await this.loadStoredData();
       await this.checkConnectionStatus();
       this.setupEventListeners();
       this.updateUI();
-      
-      
     } catch (error) {
-      this.showNotification('Başlatma hatası', 'error');
+      console.error('Init error:', error);
     }
   }
 
   async loadStoredData() {
-    try {
-      const data = await chrome.storage.local.get({
-        knownWords: [],
-        unknownWords: [],
-        isActive: true
-      });
-      
-      this.knownWords = new Set(data.knownWords || []);
-      this.unknownWords = new Set(data.unknownWords || []);
-      this.isActive = data.isActive !== false;
-      
-    } catch (error) {
-      console.error('Failed to load stored data:', error);
-      this.knownWords = new Set();
-      this.unknownWords = new Set();
+    const data = await chrome.storage.local.get({
+      knownWords: [],
+      unknownWords: [],
+      isActive: true,
+      showTranslations: true,
+      targetLang: 'tr',
+      sourceLang: 'en',
+      knownColor: '#10b981',
+      learningColor: '#f59e0b'
+    });
+    
+    this.knownWords = new Set(data.knownWords || []);
+    this.unknownWords = new Set(data.unknownWords || []);
+    this.isActive = data.isActive !== false;
+    this.showTranslations = data.showTranslations !== false;
+    this.targetLang = data.targetLang || 'tr';
+    this.sourceLang = data.sourceLang || 'en';
+    
+    // Update UI
+    this.targetLangSelect.value = this.targetLang;
+    this.showTranslationsCheckbox.checked = this.showTranslations;
+    this.isActiveCheckbox.checked = this.isActive;
+    this.knownColorInput.value = data.knownColor;
+    this.learningColorInput.value = data.learningColor;
+    
+    if (this.showTranslations) {
+      this.toggleTranslations.classList.add('active');
+    } else {
+      this.toggleTranslations.classList.remove('active');
+    }
+    
+    if (this.isActive) {
+      this.toggleExtension.classList.add('active');
+    } else {
+      this.toggleExtension.classList.remove('active');
     }
   }
 
   async checkConnectionStatus() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      this.currentTabData = tab;
+      const isYouTube = tab?.url?.includes('youtube.com/watch');
       
-      const isYouTube = tab?.url?.includes('youtube.com');
-      const isConnected = isYouTube && this.isActive;
-      
-      this.updateConnectionStatus(isConnected, isYouTube);
-      
-      // Try to ping content script
       if (isYouTube && this.isActive) {
-        try {
-          await chrome.tabs.sendMessage(tab.id, { type: 'ping' });
-        } catch (error) {
-          console.warn('Content script not responding:', error);
-        }
+        this.statusDot.classList.remove('inactive');
+        this.statusText.textContent = 'Aktif';
+      } else {
+        this.statusDot.classList.add('inactive');
+        this.statusText.textContent = 'Pasif';
       }
     } catch (error) {
-      console.error('Connection check failed:', error);
-      this.updateConnectionStatus(false, false);
+      this.statusDot.classList.add('inactive');
+      this.statusText.textContent = 'Bağlı değil';
     }
-  }
-
-  updateConnectionStatus(isConnected, isYouTube) {
-    if (isConnected) {
-      this.elements.statusDot.classList.remove('inactive');
-      this.elements.statusText.textContent = 'Aktif';
-    } else if (isYouTube && !this.isActive) {
-      this.elements.statusDot.classList.add('inactive');
-      this.elements.statusText.textContent = 'Duraklatıldı';
-    } else {
-      this.elements.statusDot.classList.add('inactive');
-      this.elements.statusText.textContent = 'YouTube\'da değil';
-    }
-    
-    this.updateToggleButton();
   }
 
   setupEventListeners() {
-    // Tab navigation
-    [this.elements.allTab, this.elements.knownTab, this.elements.learningTab].forEach(tab => {
+    // Main Tabs
+    this.mainTabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        const tabType = tab.getAttribute('data-tab');
-        this.switchTab(tabType);
+        const tabName = tab.dataset.tab;
+        this.switchMainTab(tabName);
       });
     });
-
-    // Toggle functionality
-    this.elements.toggleBtn.addEventListener('click', () => {
-      this.toggleExtension();
-    });
-
-    // Refresh YouTube
-    this.elements.refreshBtn.addEventListener('click', () => {
-      this.refreshYouTube();
-    });
-
-    // Import/Export
-    this.elements.importBtn.addEventListener('click', () => {
-      this.elements.fileInput.click();
-    });
-
-    this.elements.exportBtn.addEventListener('click', () => {
-      this.exportWords();
-    });
-
-    this.elements.fileInput.addEventListener('change', (e) => {
-      this.importWords(e.target.files[0]);
-    });
-
-    // Clear all
-    this.elements.clearBtn.addEventListener('click', () => {
-      this.clearAllWords();
+    
+    // Word Filter Tabs
+    this.wordTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const filter = tab.dataset.filter;
+        this.switchWordFilter(filter);
+      });
     });
     
-    // Search functionality
-    this.elements.searchInput.addEventListener('input', (e) => {
+    // Search
+    this.searchInput.addEventListener('input', (e) => {
       this.searchQuery = e.target.value.toLowerCase().trim();
-      this.currentPage = 0;
-      this.renderWordsList();
+      this.updateWordsList();
     });
     
-    // Load more functionality
-    this.elements.loadMoreBtn.addEventListener('click', () => {
-      this.currentPage++;
-      this.renderWordsList(true); // append mode
-    });
-  }
-
-  switchTab(tabType) {
-    // Update active tab
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('active');
+    // Language selector
+    this.targetLangSelect.addEventListener('change', async (e) => {
+      this.targetLang = e.target.value;
+      await chrome.storage.local.set({ targetLang: this.targetLang });
+      this.updateWordsList();
     });
     
-    this.elements[`${tabType}Tab`].classList.add('active');
-    this.currentTab = tabType;
-    
-    // Reset pagination when switching tabs
-    this.currentPage = 0;
-    this.renderWordsList();
-  }
-
-  async toggleExtension() {
-    try {
+    // Toggle Extension
+    this.toggleExtension.addEventListener('click', async () => {
       this.isActive = !this.isActive;
+      this.isActiveCheckbox.checked = this.isActive;
       
-      await chrome.storage.local.set({ isActive: this.isActive });
-      
-      // Notify content script
-      if (this.currentTabData?.url?.includes('youtube.com')) {
-        try {
-          await chrome.tabs.sendMessage(this.currentTabData.id, {
-            type: 'toggle',
-            isActive: this.isActive
-          });
-        } catch (error) {
-          console.warn('Could not notify content script:', error);
-        }
+      if (this.isActive) {
+        this.toggleExtension.classList.add('active');
+      } else {
+        this.toggleExtension.classList.remove('active');
       }
       
-      this.updateConnectionStatus(
-        this.isActive && this.currentTabData?.url?.includes('youtube.com'),
-        this.currentTabData?.url?.includes('youtube.com')
-      );
+      await chrome.storage.local.set({ isActive: this.isActive });
+      await this.sendMessageToContentScript({ action: 'toggle', enabled: this.isActive });
+      await this.checkConnectionStatus();
+    });
+    
+    // Toggle Translations
+    this.toggleTranslations.addEventListener('click', async () => {
+      this.showTranslations = !this.showTranslations;
+      this.showTranslationsCheckbox.checked = this.showTranslations;
       
-    } catch (error) {
-      console.error('Toggle failed:', error);
-      this.showNotification('Durum değiştirilirken hata oluştu', 'error');
+      if (this.showTranslations) {
+        this.toggleTranslations.classList.add('active');
+      } else {
+        this.toggleTranslations.classList.remove('active');
+      }
+      
+      await chrome.storage.local.set({ showTranslations: this.showTranslations });
+      this.updateWordsList();
+    });
+    
+    // Color pickers
+    this.knownColorInput.addEventListener('change', async (e) => {
+      const color = e.target.value;
+      await chrome.storage.local.set({ knownColor: color });
+      await this.sendMessageToContentScript({ action: 'updateColors' });
+    });
+    
+    this.learningColorInput.addEventListener('change', async (e) => {
+      const color = e.target.value;
+      await chrome.storage.local.set({ learningColor: color });
+      await this.sendMessageToContentScript({ action: 'updateColors' });
+    });
+    
+    // Action Buttons
+    this.refreshBtn.addEventListener('click', () => this.refreshYouTube());
+    this.translateAllBtn.addEventListener('click', () => this.translateAllWords());
+    this.exportBtn.addEventListener('click', () => this.exportWords());
+    this.importBtn.addEventListener('click', () => this.fileInput.click());
+    this.clearBtn.addEventListener('click', () => this.clearAllWords());
+    
+    this.fileInput.addEventListener('change', (e) => this.importWords(e));
+  }
+
+  switchMainTab(tabName) {
+    this.currentTab = tabName;
+    
+    this.mainTabs.forEach(tab => {
+      if (tab.dataset.tab === tabName) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+    
+    this.tabPanels.forEach(panel => {
+      if (panel.id === tabName + 'Tab') {
+        panel.classList.add('active');
+      } else {
+        panel.classList.remove('active');
+      }
+    });
+  }
+
+  switchWordFilter(filter) {
+    this.currentFilter = filter;
+    
+    this.wordTabs.forEach(tab => {
+      if (tab.dataset.filter === filter) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+    
+    this.updateWordsList();
+  }
+
+  updateUI() {
+    this.updateCounts();
+    this.updateWordsList();
+  }
+
+  updateCounts() {
+    const total = this.knownWords.size + this.unknownWords.size;
+    this.allCount.textContent = total;
+    this.knownCount.textContent = this.knownWords.size;
+    this.learningCount.textContent = this.unknownWords.size;
+  }
+
+  updateWordsList() {
+    // Get filtered words
+    let words = [];
+    
+    if (this.currentFilter === 'all') {
+      words = [
+        ...Array.from(this.knownWords).map(w => ({ word: w, status: 'known' })),
+        ...Array.from(this.unknownWords).map(w => ({ word: w, status: 'learning' }))
+      ];
+    } else if (this.currentFilter === 'known') {
+      words = Array.from(this.knownWords).map(w => ({ word: w, status: 'known' }));
+    } else if (this.currentFilter === 'learning') {
+      words = Array.from(this.unknownWords).map(w => ({ word: w, status: 'learning' }));
+    }
+    
+    // Apply search filter
+    if (this.searchQuery) {
+      words = words.filter(w => w.word.toLowerCase().includes(this.searchQuery));
+    }
+    
+    // Sort alphabetically
+    words.sort((a, b) => a.word.localeCompare(b.word));
+    
+    // Render
+    if (words.length === 0) {
+      this.wordsList.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📚</div>
+          <div class="empty-text">
+            ${this.searchQuery ? 'Kelime bulunamadı' : 'Henüz kelime yok<br>YouTube\'da Ctrl+Tık ile başlayın'}
+          </div>
+        </div>
+      `;
+    } else {
+      this.wordsList.innerHTML = words.map(w => this.createWordElement(w)).join('');
+      
+      // Add click listeners to word items
+      this.wordsList.querySelectorAll('.word-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const word = item.dataset.word;
+          this.toggleWordStatus(word);
+        });
+      });
     }
   }
 
-  updateToggleButton() {
-    if (this.isActive) {
-      this.elements.toggleIcon.textContent = '⏸';
-      this.elements.toggleText.textContent = 'Duraklat';
-    } else {
-      this.elements.toggleIcon.textContent = '▶';
-      this.elements.toggleText.textContent = 'Başlat';
+  createWordElement({ word, status }) {
+    const translationHTML = this.showTranslations 
+      ? `<div class="word-translation loading" data-word="${word}">Çeviriliyor...</div>`
+      : '';
+    
+    const item = `
+      <div class="word-item" data-word="${word}" data-status="${status}">
+        <div class="word-dot ${status}"></div>
+        <div class="word-info">
+          <div class="word-text">${word}</div>
+          ${translationHTML}
+        </div>
+      </div>
+    `;
+    
+    // Load translation if needed
+    if (this.showTranslations) {
+      setTimeout(() => this.fetchAndDisplayTranslation(word), 50);
+    }
+    
+    return item;
+  }
+
+  async fetchAndDisplayTranslation(word) {
+    try {
+      const translation = await this.translationService.translate(word, this.sourceLang, this.targetLang);
+      
+      const elements = document.querySelectorAll(`[data-word="${word}"] .word-translation`);
+      elements.forEach(el => {
+        el.textContent = translation;
+        el.classList.remove('loading');
+      });
+      
+      this.translations.set(word, translation);
+    } catch (error) {
+      const elements = document.querySelectorAll(`[data-word="${word}"] .word-translation`);
+      elements.forEach(el => {
+        el.textContent = '❌';
+        el.classList.remove('loading');
+      });
+    }
+  }
+
+  async toggleWordStatus(word) {
+    if (this.knownWords.has(word)) {
+      // Known -> Learning
+      this.knownWords.delete(word);
+      this.unknownWords.add(word);
+    } else if (this.unknownWords.has(word)) {
+      // Learning -> Remove
+      this.unknownWords.delete(word);
+    }
+    
+    await chrome.storage.local.set({
+      knownWords: Array.from(this.knownWords),
+      unknownWords: Array.from(this.unknownWords)
+    });
+    
+    await this.sendMessageToContentScript({ action: 'refresh' });
+    this.updateUI();
+  }
+
+  async translateAllWords() {
+    const allWords = [...this.knownWords, ...this.unknownWords];
+    
+    if (allWords.length === 0) {
+      alert('Henüz kelime yok!');
+      return;
+    }
+    
+    this.translateAllBtn.textContent = '⏳ Çevriliyor...';
+    this.translateAllBtn.disabled = true;
+    
+    try {
+      await this.translationService.translateBatch(allWords, this.sourceLang, this.targetLang);
+      this.updateWordsList();
+      alert(`${allWords.length} kelime çevrildi!`);
+    } catch (error) {
+      alert('Çeviri hatası!');
+    } finally {
+      this.translateAllBtn.textContent = '🌐 Tüm Kelimeleri Çevir';
+      this.translateAllBtn.disabled = false;
     }
   }
 
   async refreshYouTube() {
     try {
-      if (this.currentTabData?.url?.includes('youtube.com')) {
-        await chrome.tabs.reload(this.currentTabData.id);
-        
-        // Show feedback
-        this.elements.refreshBtn.style.transform = 'rotate(360deg)';
-        setTimeout(() => {
-          this.elements.refreshBtn.style.transform = 'rotate(0deg)';
-        }, 500);
-        
-      } else {
-        this.showNotification('YouTube sekmesi bulunamadı', 'warning');
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.url?.includes('youtube.com')) {
+        await chrome.tabs.reload(tab.id);
       }
     } catch (error) {
-      console.error('Refresh failed:', error);
-      this.showNotification('Sayfa yenilenemedi', 'error');
-    }
-  }
-
-  updateUI() {
-    this.updateCounts();
-    this.renderWordsList();
-  }
-
-  updateCounts() {
-    const knownCount = this.knownWords.size;
-    const learningCount = this.unknownWords.size;
-    const totalCount = knownCount + learningCount;
-    
-    this.elements.knownCount.textContent = knownCount;
-    this.elements.learningCount.textContent = learningCount;
-    this.elements.totalCount.textContent = totalCount;
-    this.elements.knownTabCount.textContent = knownCount;
-    this.elements.learningTabCount.textContent = learningCount;
-  }
-
-  collectAndFilterWords() {
-    let allWords = [];
-    
-    // Collect words based on current tab
-    if (this.currentTab === 'known') {
-      allWords = Array.from(this.knownWords).map(word => ({ word, type: 'known' }));
-    } else if (this.currentTab === 'learning') {
-      allWords = Array.from(this.unknownWords).map(word => ({ word, type: 'unknown' }));
-    } else {
-      // All tab
-      const knownWords = Array.from(this.knownWords).map(word => ({ word, type: 'known' }));
-      const unknownWords = Array.from(this.unknownWords).map(word => ({ word, type: 'unknown' }));
-      allWords = [...knownWords, ...unknownWords];
-    }
-    
-    // Apply search filter
-    if (this.searchQuery.trim()) {
-      const query = this.searchQuery.toLowerCase();
-      allWords = allWords.filter(item => item.word.toLowerCase().includes(query));
-    }
-    
-    // Sort alphabetically
-    allWords.sort((a, b) => a.word.localeCompare(b.word));
-    
-    this.filteredWords = allWords;
-  }
-
-  renderWordsList(appendMode = false) {
-    const isEmpty = this.knownWords.size === 0 && this.unknownWords.size === 0;
-    
-    if (isEmpty) {
-      this.elements.emptyState.classList.remove('hidden');
-      this.elements.wordsList.innerHTML = '';
-      this.elements.wordsList.appendChild(this.elements.emptyState);
-      this.elements.loadMoreBtn.classList.add('hidden');
-      this.elements.paginationInfo.textContent = '0 kelime';
-      return;
-    }
-    
-    this.elements.emptyState.classList.add('hidden');
-    
-    // Collect and filter words
-    this.collectAndFilterWords();
-    
-    // Calculate pagination
-    const startIndex = appendMode ? (this.currentPage * this.itemsPerPage) : 0;
-    const endIndex = startIndex + this.itemsPerPage;
-    const wordsToShow = this.filteredWords.slice(0, endIndex);
-    const hasMore = endIndex < this.filteredWords.length;
-    
-    // Update pagination info
-    this.elements.paginationInfo.textContent = 
-      this.filteredWords.length + ' kelime' + (this.searchQuery ? ' ("' + this.searchQuery + '" için)' : '');
-    
-    // Show/hide load more button
-    if (hasMore) {
-      this.elements.loadMoreBtn.classList.remove('hidden');
-      this.elements.loadMoreBtn.textContent = 
-        `${this.filteredWords.length - endIndex} kelime daha yükle`;
-    } else {
-      this.elements.loadMoreBtn.classList.add('hidden');
-    }
-    
-    // Render words
-    if (!appendMode) {
-      this.elements.wordsList.innerHTML = '';
-    }
-    
-    const fragment = document.createDocumentFragment();
-    const newWords = appendMode ? 
-      this.filteredWords.slice(startIndex, endIndex) : 
-      wordsToShow;
-    
-    newWords.forEach((item, index) => {
-      const wordElement = this.createWordElement(item, startIndex + index);
-      fragment.appendChild(wordElement);
-    });
-    
-    this.elements.wordsList.appendChild(fragment);
-  }
-
-  createWordElement(item, index) {
-    const { word, type } = item;
-    
-    const element = document.createElement('div');
-    element.className = `word-item animate ${type === 'known' ? 'known-word' : 'unknown-word'}`;
-    element.style.setProperty('--index', index);
-    element.setAttribute('data-word', word);
-    
-    element.innerHTML = `
-      <div class="word-indicator ${type === 'known' ? 'known' : 'learning'}"></div>
-      <div class="word-content">
-        <div class="word-text">${this.escapeHtml(word)}</div>
-        <div class="word-meta">Tıkla ve durumu değiştir</div>
-      </div>
-    `;
-    
-    // Add click handler for word status toggle
-    element.addEventListener('click', () => {
-      this.toggleWordStatus(word);
-    });
-    
-    return element;
-  }
-
-  async toggleWordStatus(word) {
-    try {
-      let moved = false;
-      
-      if (this.knownWords.has(word)) {
-        this.knownWords.delete(word);
-        this.unknownWords.add(word);
-        moved = true;
-      } else if (this.unknownWords.has(word)) {
-        this.unknownWords.delete(word);
-        this.knownWords.add(word);
-        moved = true;
-      }
-      
-      if (moved) {
-        await this.saveWords();
-        
-        // Instead of partial update, refresh the current view
-        // because words might move between tabs
-        this.collectAndFilterWords();
-        this.renderWordsList();
-        
-        // Update tab badges
-        this.updateTabBadges();
-        
-        // Notify content script
-        if (this.currentTabData?.url?.includes('youtube.com')) {
-          try {
-            await chrome.tabs.sendMessage(this.currentTabData.id, {
-              type: 'wordsUpdated',
-              knownWords: Array.from(this.knownWords),
-              unknownWords: Array.from(this.unknownWords)
-            });
-          } catch (error) {
-            // Content script might not be ready
-          }
-        }
-      }
-      
-    } catch (error) {
-      this.showNotification('Kelime durumu değiştirilemedi', 'error');
-    }
-  }
-
-  updateTabBadges() {
-    const knownCount = this.knownWords.size;
-    const learningCount = this.unknownWords.size;
-    const totalCount = knownCount + learningCount;
-    
-    this.elements.totalCount.textContent = totalCount;
-    this.elements.knownTabCount.textContent = knownCount;
-    this.elements.learningTabCount.textContent = learningCount;
-  }
-
-  async saveWords() {
-    try {
-      await chrome.storage.local.set({
-        knownWords: Array.from(this.knownWords),
-        unknownWords: Array.from(this.unknownWords)
-      });
-    } catch (error) {
-      throw error;
+      console.error('Refresh error:', error);
     }
   }
 
   async exportWords() {
-    try {
-      const data = {
-        knownWords: Array.from(this.knownWords),
-        unknownWords: Array.from(this.unknownWords),
-        exportDate: new Date().toISOString(),
-        version: '2.0'
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json'
-      });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `subtitle-colorer-words-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      
-      URL.revokeObjectURL(url);
-      
-      this.showNotification('Kelimeler dışa aktarıldı', 'success');
-      
-    } catch (error) {
-      console.error('Export failed:', error);
-      this.showNotification('Dışa aktarma başarısız', 'error');
-    }
+    const data = {
+      knownWords: Array.from(this.knownWords),
+      unknownWords: Array.from(this.unknownWords),
+      translations: Object.fromEntries(this.translations),
+      exportDate: new Date().toISOString(),
+      version: '2.1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `subflow-words-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
-  async importWords(file) {
+  async importWords(event) {
+    const file = event.target.files[0];
     if (!file) return;
     
     try {
       const text = await file.text();
       const data = JSON.parse(text);
       
-      if (data.knownWords && Array.isArray(data.knownWords)) {
-        data.knownWords.forEach(word => this.knownWords.add(word));
+      if (data.knownWords) {
+        this.knownWords = new Set([...this.knownWords, ...data.knownWords]);
+      }
+      if (data.unknownWords) {
+        this.unknownWords = new Set([...this.unknownWords, ...data.unknownWords]);
+      }
+      if (data.translations) {
+        this.translations = new Map([...this.translations, ...Object.entries(data.translations)]);
       }
       
-      if (data.unknownWords && Array.isArray(data.unknownWords)) {
-        data.unknownWords.forEach(word => this.unknownWords.add(word));
-      }
+      await chrome.storage.local.set({
+        knownWords: Array.from(this.knownWords),
+        unknownWords: Array.from(this.unknownWords)
+      });
       
-      await this.saveWords();
+      await this.sendMessageToContentScript({ action: 'refresh' });
       this.updateUI();
       
-      this.showNotification('Kelimeler başarıyla içe aktarıldı', 'success');
-      
-      // Reset file input
-      this.elements.fileInput.value = '';
-      
+      alert('Kelimeler başarıyla içe aktarıldı!');
     } catch (error) {
-      console.error('Import failed:', error);
-      this.showNotification('İçe aktarma başarısız', 'error');
+      alert('İçe aktarma hatası!');
     }
+    
+    event.target.value = '';
   }
 
   async clearAllWords() {
-    if (!confirm('Tüm kelimeleri silmek istediğinizden emin misiniz?')) {
+    if (!confirm('Tüm kelimeler silinecek. Emin misiniz?')) {
       return;
     }
     
+    this.knownWords.clear();
+    this.unknownWords.clear();
+    this.translations.clear();
+    
+    await chrome.storage.local.set({
+      knownWords: [],
+      unknownWords: []
+    });
+    
+    await this.sendMessageToContentScript({ action: 'refresh' });
+    this.updateUI();
+  }
+
+  async sendMessageToContentScript(message) {
     try {
-      this.knownWords.clear();
-      this.unknownWords.clear();
-      
-      await chrome.storage.local.set({
-        knownWords: [],
-        unknownWords: []
-      });
-      
-      this.updateUI();
-      this.showNotification('Tüm kelimeler silindi', 'success');
-      
-      // Notify content script
-      if (this.currentTabData?.url?.includes('youtube.com')) {
-        try {
-          await chrome.tabs.sendMessage(this.currentTabData.id, {
-            type: 'wordsCleared'
-          });
-        } catch (error) {
-          console.warn('Could not notify content script:', error);
-        }
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        // Convert action to type for content script
+        const msg = { ...message, type: message.action };
+        delete msg.action;
+        await chrome.tabs.sendMessage(tab.id, msg);
       }
-      
     } catch (error) {
-      console.error('Clear failed:', error);
-      this.showNotification('Temizleme başarısız', 'error');
+      console.error('Message error:', error);
     }
-  }
-
-  showNotification(message, type = 'info') {
-    // Simple notification using the browser's built-in notification
-    // Could be enhanced with a custom notification system
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 }
 
-// Initialize the popup when DOM is loaded
-document.addEventListener('DOMContentLoaded', async () => {
-  window.popupInstance = await PopupUI.create();
-});
-
-// Listen for storage changes to update UI in real-time
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'local') {
-    if (window.popupInstance && (changes.knownWords || changes.unknownWords)) {
-      window.popupInstance.loadStoredData().then(() => {
-        window.popupInstance.updateUI();
-      }).catch(error => {
-        console.error('Failed to update UI from storage changes:', error);
-      });
-    }
-  }
-});
+// Initialize
+PopupUI.create();

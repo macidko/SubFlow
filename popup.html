@@ -3,45 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subtitle Colorer</title>
+    <title>SubFlow</title>
     <style>
         :root {
-            /* Modern Color Palette */
-            --primary: #6366f1;
-            --primary-hover: #5b59d6;
-            --primary-light: #e0e7ff;
-            --secondary: #64748b;
-            
-            --known-color: #10b981;
-            --known-bg: #f0fdf4;
-            --known-border: #bbf7d0;
-            
-            --learning-color: #f59e0b;
-            --learning-bg: #fffbeb;
-            --learning-border: #fed7aa;
-            
-            --surface: #ffffff;
-            --surface-hover: #f8fafc;
-            --surface-alt: #f1f5f9;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #ffffff;
+            --surface: #f8fafc;
             --border: #e2e8f0;
-            --border-light: #f1f5f9;
-            
-            --text: #0f172a;
+            --text: #1e293b;
             --text-secondary: #64748b;
             --text-muted: #94a3b8;
-            
-            --success: #10b981;
-            --warning: #f59e0b;
+            --known: #10b981;
+            --learning: #f59e0b;
             --danger: #ef4444;
-            
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            
-            --radius: 8px;
-            --radius-lg: 12px;
-            --radius-full: 9999px;
+            --radius: 6px;
         }
 
         * {
@@ -51,438 +27,419 @@
         }
 
         body {
-            width: 380px;
-            min-height: 540px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 400px;
+            height: 560px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
             color: var(--text);
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 13px;
             overflow: hidden;
         }
 
-        .popup {
-            height: 100%;
+        /* Main Tabs */
+        .main-tabs {
             display: flex;
-            flex-direction: column;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .main-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .main-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .main-tab:hover {
             background: var(--surface);
-            margin: 8px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
+        }
+
+        /* Tab Panels */
+        .tab-panel {
+            display: none;
+            height: calc(560px - 45px);
             overflow: hidden;
+            flex-direction: column;
         }
 
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            color: white;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
+        .tab-panel.active {
+            display: flex;
         }
 
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            transform: translate(30px, -30px);
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .header-top {
+        /* ===== HOME TAB ===== */
+        .home-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
         }
 
-        .logo {
+        .brand {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-weight: 600;
-            font-size: 16px;
         }
 
-        .logo-icon {
-            width: 24px;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
+        .brand-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
         }
 
-        .status-badge {
+        .brand-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .header-controls {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            border-radius: var(--radius-full);
-            font-size: 12px;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: var(--surface);
+            font-size: 11px;
             font-weight: 500;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
         }
 
         .status-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #10b981;
-            animation: pulse 2s infinite;
+            background: var(--known);
         }
 
         .status-dot.inactive {
-            background: #ef4444;
-            animation: none;
+            background: var(--danger);
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .control-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
+        .lang-selector {
+            padding: 3px 8px;
+            border: 1px solid var(--border);
             border-radius: var(--radius);
+            font-size: 11px;
+            background: var(--bg);
+            color: var(--text);
             cursor: pointer;
+        }
+
+        .lang-selector:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Word Tabs */
+        .word-tabs {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            gap: 4px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
         }
 
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
-        }
-
-        .control-btn.active {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 16px;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 13px;
-        }
-
-        .stat-icon {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-        }
-
-        .stat-icon.known {
-            background: var(--known-color);
-            color: white;
-        }
-
-        .stat-icon.learning {
-            background: var(--learning-color);
-            color: white;
-        }
-
-        /* Content */
-        .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .tab-nav {
-            display: flex;
-            background: var(--surface-alt);
-            padding: 4px;
-            margin: 16px 16px 0;
-            border-radius: var(--radius);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 8px 12px;
+        .word-tab {
+            padding: 6px 12px;
             border: none;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
-            border-radius: 6px;
+            border-radius: var(--radius);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
 
-        .tab-btn.active {
-            background: var(--surface);
+        .word-tab.active {
+            background: var(--bg);
             color: var(--text);
-            box-shadow: var(--shadow-sm);
         }
 
-        /* Search Section */
-        .search-section {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-light);
-            background: var(--surface-hover);
+        .word-tab:hover:not(.active) {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .word-tab .count {
+            margin-left: 4px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        /* Search */
+        .search-box {
+            padding: 8px 16px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
         }
 
         .search-input {
             width: 100%;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            font-size: 13px;
+            font-size: 12px;
             background: var(--surface);
-            color: var(--text);
-            transition: all 0.2s ease;
         }
 
         .search-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
-        .pagination-info {
-            margin-top: 8px;
-            font-size: 11px;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        .words-section {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .words-container {
+        /* Words List */
+        .words-list {
             flex: 1;
             overflow-y: auto;
-            max-height: 280px;
-        }
-
-        .load-more-btn {
-            width: 100%;
             padding: 8px 16px;
-            border: 1px solid var(--border);
-            background: var(--surface-hover);
-            color: var(--text-secondary);
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin: 8px 0;
         }
 
-        .load-more-btn:hover {
-            background: var(--surface);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .load-more-btn.hidden {
-            display: none;
-        }
-
-        /* Empty State */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            text-align: center;
-            color: var(--text-secondary);
-        }
-
-        .empty-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--primary-light) 0%, #e2e8f0 100%);
-            border-radius: var(--radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-bottom: 12px;
-        }
-
-        .empty-title {
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: var(--text);
-        }
-
-        .empty-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* Word Items */
         .word-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
+            gap: 10px;
+            padding: 8px 10px;
+            margin-bottom: 4px;
             background: var(--surface);
-            border: 1px solid var(--border-light);
             border-radius: var(--radius);
-            transition: all 0.2s ease;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
         .word-item:hover {
-            background: var(--surface-hover);
-            border-color: var(--border);
-            box-shadow: var(--shadow-sm);
-            transform: translateY(-1px);
+            background: #e2e8f0;
         }
 
-        .word-indicator {
-            width: 8px;
-            height: 8px;
+        .word-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
 
-        .word-indicator.known {
-            background: var(--known-color);
+        .word-dot.known {
+            background: var(--known);
         }
 
-        .word-indicator.learning {
-            background: var(--learning-color);
+        .word-dot.learning {
+            background: var(--learning);
         }
 
-        .word-content {
+        .word-info {
             flex: 1;
             min-width: 0;
         }
 
         .word-text {
             font-weight: 500;
-            margin-bottom: 2px;
-            color: var(--text);
-        }
-
-        .word-meta {
             font-size: 12px;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .word-translation {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .word-translation.loading {
             color: var(--text-muted);
+            font-style: italic;
         }
 
-        /* Actions */
-        .actions {
-            padding: 16px;
-            border-top: 1px solid var(--border-light);
-            background: var(--surface-hover);
-        }
-
-        .action-row {
+        .empty-state {
             display: flex;
-            gap: 8px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .empty-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 12px;
+        }
+
+        /* ===== SETTINGS TAB ===== */
+        .settings-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .setting-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin-bottom: 8px;
         }
 
-        .action-row:last-child {
-            margin-bottom: 0;
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            margin-bottom: 6px;
         }
 
-        .action-btn {
+        .setting-label {
+            font-size: 12px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: var(--border);
+            border-radius: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            left: 20px;
+        }
+
+        .color-picker-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .color-input {
+            width: 50px;
+            height: 32px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+
+        .color-label {
             flex: 1;
-            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .setting-btn {
+            width: 100%;
+            padding: 10px;
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text);
             border-radius: var(--radius);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
         }
 
-        .action-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            box-shadow: var(--shadow-sm);
+        .setting-btn:hover {
+            background: #e2e8f0;
         }
 
-        .action-btn.primary {
+        .setting-btn.primary {
             background: var(--primary);
             border-color: var(--primary);
             color: white;
         }
 
-        .action-btn.primary:hover {
+        .setting-btn.primary:hover {
             background: var(--primary-hover);
-            border-color: var(--primary-hover);
         }
 
-        .action-btn.danger {
+        .setting-btn.danger {
             color: var(--danger);
-            border-color: #fecaca;
-        }
-
-        .action-btn.danger:hover {
-            background: #fef2f2;
             border-color: var(--danger);
         }
 
+        .setting-btn.danger:hover {
+            background: #fef2f2;
+        }
+
         /* Scrollbar */
-        .words-list::-webkit-scrollbar {
+        ::-webkit-scrollbar {
             width: 4px;
         }
 
-        .words-list::-webkit-scrollbar-track {
+        ::-webkit-scrollbar-track {
             background: transparent;
         }
 
-        .words-list::-webkit-scrollbar-thumb {
+        ::-webkit-scrollbar-thumb {
             background: var(--border);
             border-radius: 2px;
         }
 
-        .words-list::-webkit-scrollbar-thumb:hover {
+        ::-webkit-scrollbar-thumb:hover {
             background: var(--text-muted);
         }
 
-        /* Utility Classes */
         .hidden {
             display: none !important;
         }
@@ -490,119 +447,151 @@
         input[type="file"] {
             display: none;
         }
-
-        /* Animations */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .word-item.animate {
-            animation: slideIn 0.3s ease forwards;
-        }
-
-        .word-item.animate:nth-child(n) {
-            animation-delay: calc(0.05s * var(--index, 0));
-        }
     </style>
 </head>
 <body>
-    <div class="popup">
-        <header class="header">
-            <div class="header-content">
-                <div class="header-top">
-                    <div class="logo">
-                        <div class="logo-icon">�</div>
-                        <span>SubFlow</span>
-                    </div>
-                    <div class="status-badge">
-                        <span class="status-dot" id="statusDot"></span>
-                        <span id="statusText">Aktif</span>
-                    </div>
-                </div>
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <div class="stat-icon known">✓</div>
-                        <span>Bilinen: <span id="knownCount">0</span></span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-icon learning">📚</div>
-                        <span>Öğrenilen: <span id="learningCount">0</span></span>
-                    </div>
-                </div>
+    <!-- Main Navigation Tabs -->
+    <div class="main-tabs">
+        <button class="main-tab active" data-tab="home">Ana Ekran</button>
+        <button class="main-tab" data-tab="settings">Ayarlar</button>
+    </div>
+
+    <!-- Home Tab Panel -->
+    <div class="tab-panel active" id="homeTab">
+        <!-- Header with logo and controls -->
+        <div class="home-header">
+            <div class="brand">
+                <div class="brand-icon">SF</div>
+                <div class="brand-name">SubFlow</div>
             </div>
-        </header>
-
-        <div class="content">
-            <nav class="tab-nav">
-                <button class="tab-btn active" id="allTab" data-tab="all">
-                    Tümü (<span id="totalCount">0</span>)
-                </button>
-                <button class="tab-btn" id="knownTab" data-tab="known">
-                    Bilinen (<span id="knownTabCount">0</span>)
-                </button>
-                <button class="tab-btn" id="learningTab" data-tab="learning">
-                    Öğrenilen (<span id="learningTabCount">0</span>)
-                </button>
-            </nav>
-
-            <div class="search-section">
-                <input type="text" id="searchInput" class="search-input" placeholder="Kelime ara...">
-                <div class="pagination-info">
-                    <span id="paginationInfo">0 kelime</span>
+            <div class="header-controls">
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Aktif</span>
                 </div>
-            </div>
-
-            <div class="words-section">
-                <div class="words-container">
-                    <div class="words-list" id="wordsList">
-                        <div class="empty-state" id="emptyState">
-                            <div class="empty-icon">🎯</div>
-                            <div class="empty-title">Henüz kelime yok</div>
-                            <div class="empty-subtitle">YouTube'da Ctrl+Tık ile kelime eklemeye başlayın</div>
-                        </div>
-                    </div>
-                    <button class="load-more-btn hidden" id="loadMoreBtn">Daha Fazla Yükle</button>
-                </div>
+                <select id="targetLang" class="lang-selector">
+                    <option value="tr">🇹🇷 TR</option>
+                    <option value="en">🇺🇸 EN</option>
+                    <option value="ar">🇸🇦 AR</option>
+                    <option value="de">🇩🇪 DE</option>
+                    <option value="es">🇪🇸 ES</option>
+                    <option value="fr">🇫🇷 FR</option>
+                    <option value="it">🇮🇹 IT</option>
+                    <option value="ja">🇯🇵 JA</option>
+                    <option value="ko">🇰🇷 KO</option>
+                    <option value="pt">🇵🇹 PT</option>
+                    <option value="ru">🇷🇺 RU</option>
+                    <option value="zh-CN">🇨🇳 ZH</option>
+                </select>
             </div>
         </div>
 
-        <div class="actions">
-            <div class="action-row">
-                <button class="action-btn primary" id="refreshBtn">
-                    <span>🔄</span>
-                    YouTube'u Yenile
+        <!-- Word Filter Tabs -->
+        <div class="word-tabs">
+            <button class="word-tab active" data-filter="all">
+                Tümü <span class="count" id="allCount">0</span>
+            </button>
+            <button class="word-tab" data-filter="known">
+                Bilinen <span class="count" id="knownCount">0</span>
+            </button>
+            <button class="word-tab" data-filter="learning">
+                Öğrenilen <span class="count" id="learningCount">0</span>
+            </button>
+        </div>
+
+        <!-- Search Box -->
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Kelime ara...">
+        </div>
+
+        <!-- Words List -->
+        <div class="words-list" id="wordsList">
+            <div class="empty-state">
+                <div class="empty-icon">📚</div>
+                <div class="empty-text">Henüz kelime yok<br>YouTube'da Ctrl+Tık ile başlayın</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Tab Panel -->
+    <div class="tab-panel" id="settingsTab">
+        <div class="settings-content">
+            <!-- General Settings -->
+            <div class="setting-section">
+                <div class="section-title">Genel</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>⚡</span>
+                        <span>Eklentiyi Etkinleştir</span>
+                    </div>
+                    <div class="toggle-switch active" id="toggleExtension">
+                        <input type="checkbox" id="isActiveCheckbox" checked hidden>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>🌐</span>
+                        <span>Çevirileri Göster</span>
+                    </div>
+                    <div class="toggle-switch active" id="toggleTranslations">
+                        <input type="checkbox" id="showTranslationsCheckbox" checked hidden>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Settings -->
+            <div class="setting-section">
+                <div class="section-title">Renkler</div>
+                <div class="setting-item">
+                    <div class="color-picker-row">
+                        <input type="color" id="knownColor" class="color-input" value="#10b981">
+                        <span class="color-label">✓ Bilinen Kelimeler</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="color-picker-row">
+                        <input type="color" id="learningColor" class="color-input" value="#f59e0b">
+                        <span class="color-label">📚 Öğrenilen Kelimeler</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="setting-section">
+                <div class="section-title">İşlemler</div>
+                <button class="setting-btn primary" id="refreshBtn">
+                    🔄 YouTube'u Yenile
                 </button>
-                <button class="action-btn" id="toggleBtn">
-                    <span id="toggleIcon">⏸</span>
-                    <span id="toggleText">Duraklat</span>
+                <button class="setting-btn" id="translateAllBtn">
+                    🌐 Tüm Kelimeleri Çevir
+                </button>
+                <button class="setting-btn" id="exportBtn">
+                    📤 Kelimeleri Dışa Aktar
+                </button>
+                <button class="setting-btn" id="importBtn">
+                    📥 Kelimeleri İçe Aktar
+                </button>
+                <button class="setting-btn danger" id="clearBtn">
+                    🗑 Tüm Kelimeleri Temizle
                 </button>
             </div>
-            <div class="action-row">
-                <button class="action-btn" id="importBtn">
-                    <span>📥</span>
-                    İçe Aktar
-                </button>
-                <button class="action-btn" id="exportBtn">
-                    <span>📤</span>
-                    Dışa Aktar
-                </button>
-                <button class="action-btn danger" id="clearBtn">
-                    <span>🗑</span>
-                    Temizle
-                </button>
+
+            <!-- Info -->
+            <div class="setting-section">
+                <div class="section-title">Bilgi</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>ℹ️</span>
+                        <span>Versiyon 2.1.0</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <input type="file" id="fileInput" accept=".json" />
     
+    <script src="translation-service.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

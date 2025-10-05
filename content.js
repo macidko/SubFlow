@@ -465,8 +465,8 @@ class SubtitleColorer {
     
     // Position menu above the word with better positioning
     const rect = wordSpan.getBoundingClientRect();
-    const menuWidth = 200; // Approximate menu width
-    const menuHeight = 120; // Approximate menu height
+    const menuWidth = 180; // Compact menu width
+    const menuHeight = 110; // Approximate menu height
     
     // Calculate horizontal position (center above word)
     let menuX = rect.left + (rect.width / 2) - (menuWidth / 2);
@@ -494,20 +494,17 @@ class SubtitleColorer {
     const isKnown = this.knownWords.has(word);
     const isUnknown = this.unknownWords.has(word);
 
-    // Add modern word title with status
+    // Add word title with status
     const wordTitle = document.createElement('div');
     wordTitle.style.cssText = `
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(241, 245, 249, 0.8);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
     `;
     
     const wordText = document.createElement('span');
     wordText.textContent = word;
-    wordText.style.cssText = 'font-size: 14px; font-weight: 700; color: #0f172a;';
     wordTitle.appendChild(wordText);
     
     if (isKnown || isUnknown) {
@@ -550,30 +547,20 @@ class SubtitleColorer {
       button.className = className;
       button.setAttribute('type', 'button');
       
-      const buttonText = document.createElement('span');
-      buttonText.textContent = text;
-      buttonText.style.cssText = 'flex: 1; text-align: left;';
-      button.appendChild(buttonText);
-      
       const buttonIcon = document.createElement('span');
       buttonIcon.className = 'button-icon';
       buttonIcon.textContent = icon;
       button.appendChild(buttonIcon);
+      
+      const buttonText = document.createElement('span');
+      buttonText.textContent = text;
+      button.appendChild(buttonText);
       
       button.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
         action();
         this.hideWordMenu();
-      });
-      
-      // Add hover effects
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = 'translateX(2px)';
-      });
-      
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = 'translateX(0)';
       });
       
       menu.appendChild(button);
@@ -886,6 +873,14 @@ async function handleMessage(message, sendResponse) {
       case 'getStatus':
         handleGetStatus(sendResponse);
         break;
+      
+      case 'updateColors':
+        await handleUpdateColors(sendResponse);
+        break;
+      
+      case 'refresh':
+        await handleRefresh(sendResponse);
+        break;
         
       default:
         sendResponse({ status: 'error', message: 'Unknown message type' });
@@ -969,3 +964,35 @@ function handleGetStatus(sendResponse) {
     unknownWords: window.subtitleColorer.unknownWords.size
   });
 }
+
+async function handleUpdateColors(sendResponse) {
+  // Reload colors from storage and update subtitles
+  const data = await chrome.storage.local.get({
+    knownColor: '#10b981',
+    learningColor: '#f59e0b'
+  });
+  
+  // Update CSS variables
+  document.documentElement.style.setProperty('--known-color', data.knownColor);
+  document.documentElement.style.setProperty('--learning-color', data.learningColor);
+  
+  // Re-process subtitles to apply new colors
+  window.subtitleColorer.updateWordColors();
+  
+  sendResponse({ status: 'ok' });
+}
+
+async function handleRefresh(sendResponse) {
+  // Reload word data from storage
+  const data = await chrome.storage.local.get({
+    knownWords: [],
+    unknownWords: []
+  });
+  
+  window.subtitleColorer.knownWords = new Set(data.knownWords || []);
+  window.subtitleColorer.unknownWords = new Set(data.unknownWords || []);
+  window.subtitleColorer.updateWordColors();
+  
+  sendResponse({ status: 'ok' });
+}
+
