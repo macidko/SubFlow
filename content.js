@@ -48,7 +48,12 @@ class SubtitleColorer {
       this.isActive = data.isActive !== false;
       this.pauseOnHover = data.pauseOnHover !== false;
       
-
+      console.log('📚 SubFlow initialized:', {
+        knownWords: this.knownWords.size,
+        unknownWords: this.unknownWords.size,
+        isActive: this.isActive,
+        pauseOnHover: this.pauseOnHover
+      });
     } catch (error) {
       console.error('Failed to initialize SubtitleColorer:', error);
       this.knownWords = new Set();
