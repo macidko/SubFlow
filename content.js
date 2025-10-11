@@ -14,6 +14,7 @@ class SubtitleColorer {
     this.pauseOnHover = true;
     this.ctrlPressed = false;
     this.videoPaused = false;
+    this.wasPlayingBeforePause = false; // Track if WE paused the video
     
     // SINGLE observer (no duplicate!)
     this.observer = null;
@@ -27,8 +28,10 @@ class SubtitleColorer {
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
     
-    // Current menu
+    // Current menu and cleanup handlers
     this.currentMenu = null;
+    this.currentMenuClickHandler = null;
+    this.menuTimeouts = null;
   }
 
   async init() {
@@ -429,33 +432,61 @@ class SubtitleColorer {
     document.body.appendChild(menu);
     this.currentMenu = menu;
     
+    // Store timeout IDs and handler for proper cleanup
+    this.menuTimeouts = {
+      clickListener: null,
+      autoClose: null
+    };
+    
     const handleClickOutside = (e) => {
       if (!menu.contains(e.target)) {
-        this.hideWordMenu();
-        document.removeEventListener('click', handleClickOutside);
+        this.cleanupMenu();
       }
     };
     
-    setTimeout(() => {
+    this.currentMenuClickHandler = handleClickOutside;
+    
+    this.menuTimeouts.clickListener = setTimeout(() => {
       document.addEventListener('click', handleClickOutside);
     }, 100);
     
-    setTimeout(() => {
+    this.menuTimeouts.autoClose = setTimeout(() => {
       if (this.currentMenu === menu) {
-        this.hideWordMenu();
-        document.removeEventListener('click', handleClickOutside);
+        this.cleanupMenu();
       }
     }, 6000);
   }
 
   hideWordMenu() {
-    if (this.currentMenu) {
-      this.currentMenu.remove();
-      this.currentMenu = null;
-    }
+    this.cleanupMenu();
     
     if (this.pauseOnHover && this.videoPaused) {
       this.resumeVideo();
+    }
+  }
+
+  cleanupMenu() {
+    // Clear timeouts to prevent memory leaks
+    if (this.menuTimeouts) {
+      if (this.menuTimeouts.clickListener) {
+        clearTimeout(this.menuTimeouts.clickListener);
+      }
+      if (this.menuTimeouts.autoClose) {
+        clearTimeout(this.menuTimeouts.autoClose);
+      }
+      this.menuTimeouts = null;
+    }
+    
+    // Remove event listener
+    if (this.currentMenuClickHandler) {
+      document.removeEventListener('click', this.currentMenuClickHandler);
+      this.currentMenuClickHandler = null;
+    }
+    
+    // Remove menu element
+    if (this.currentMenu) {
+      this.currentMenu.remove();
+      this.currentMenu = null;
     }
   }
 
@@ -497,17 +528,29 @@ class SubtitleColorer {
 
   pauseVideo() {
     const video = document.querySelector('video');
-    if (video && !video.paused) {
-      this.videoPaused = true;
-      video.pause();
+    if (video) {
+      // Only pause if video is currently playing
+      if (!video.paused) {
+        this.wasPlayingBeforePause = true;
+        video.pause();
+        this.videoPaused = true;
+      } else {
+        // Video was already paused by user - don't touch it!
+        this.wasPlayingBeforePause = false;
+        this.videoPaused = false;
+      }
     }
   }
 
   resumeVideo() {
     const video = document.querySelector('video');
-    if (video && this.videoPaused) {
+    // Only resume if WE paused it (not user)
+    if (video && this.videoPaused && this.wasPlayingBeforePause) {
+      video.play().catch(() => {
+        // Autoplay might be blocked - ignore error
+      });
       this.videoPaused = false;
-      video.play();
+      this.wasPlayingBeforePause = false;
     }
   }
 
