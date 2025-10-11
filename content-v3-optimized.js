@@ -616,7 +616,6 @@ async function handleMessage(message, sendResponse) {
         break;
         
       case 'wordsUpdated':
-        // Direct word list update - no storage read
         if (message.knownWords) {
           window.subtitleColorer.knownWords = new Set(message.knownWords);
         }
@@ -628,7 +627,6 @@ async function handleMessage(message, sendResponse) {
         break;
         
       case 'refresh': {
-        // Fallback: Read from storage if words not provided
         const data = await chrome.storage.local.get({
           knownWords: [],
           unknownWords: []

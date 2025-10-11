@@ -169,7 +169,7 @@ class PopupUI {
       }
       
       await chrome.storage.local.set({ isActive: this.isActive });
-      await this.sendMessageToContentScript({ action: 'toggle', enabled: this.isActive });
+      await this.sendMessageToContentScript({ type: 'toggle', isActive: this.isActive });
       await this.checkConnectionStatus();
     });
     
@@ -192,13 +192,13 @@ class PopupUI {
     this.knownColorInput.addEventListener('change', async (e) => {
       const color = e.target.value;
       await chrome.storage.local.set({ knownColor: color });
-      await this.sendMessageToContentScript({ action: 'updateColors' });
+      await this.sendMessageToContentScript({ type: 'updateColors' });
     });
     
     this.learningColorInput.addEventListener('change', async (e) => {
       const color = e.target.value;
       await chrome.storage.local.set({ learningColor: color });
-      await this.sendMessageToContentScript({ action: 'updateColors' });
+      await this.sendMessageToContentScript({ type: 'updateColors' });
     });
     
     // Action Buttons
@@ -352,8 +352,9 @@ class PopupUI {
       this.knownWords.delete(word);
       this.unknownWords.add(word);
     } else if (this.unknownWords.has(word)) {
-      // Learning -> Remove
+      // Learning -> Known (döngüsel toggle)
       this.unknownWords.delete(word);
+      this.knownWords.add(word);
     }
     
     await chrome.storage.local.set({
@@ -361,7 +362,13 @@ class PopupUI {
       unknownWords: Array.from(this.unknownWords)
     });
     
-    await this.sendMessageToContentScript({ action: 'refresh' });
+    // Send updated word lists directly (no storage re-read needed!)
+    await this.sendMessageToContentScript({ 
+      type: 'wordsUpdated',
+      knownWords: Array.from(this.knownWords),
+      unknownWords: Array.from(this.unknownWords)
+    });
+    
     this.updateUI();
   }
 
@@ -440,7 +447,11 @@ class PopupUI {
         unknownWords: Array.from(this.unknownWords)
       });
       
-      await this.sendMessageToContentScript({ action: 'refresh' });
+      await this.sendMessageToContentScript({ 
+        type: 'wordsUpdated',
+        knownWords: Array.from(this.knownWords),
+        unknownWords: Array.from(this.unknownWords)
+      });
       this.updateUI();
       
       alert('Kelimeler başarıyla içe aktarıldı!');
@@ -465,7 +476,9 @@ class PopupUI {
       unknownWords: []
     });
     
-    await this.sendMessageToContentScript({ action: 'refresh' });
+    await this.sendMessageToContentScript({ 
+      type: 'clearAllWords'
+    });
     this.updateUI();
   }
 
@@ -473,10 +486,8 @@ class PopupUI {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab?.id) {
-        // Convert action to type for content script
-        const msg = { ...message, type: message.action };
-        delete msg.action;
-        await chrome.tabs.sendMessage(tab.id, msg);
+        // Standardized messaging - use 'type' directly
+        await chrome.tabs.sendMessage(tab.id, message);
       }
     } catch (error) {
       console.error('Message error:', error);
