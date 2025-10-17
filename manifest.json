@@ -13,8 +13,8 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "js": ["perfect-mimic.js"],
+      "css": ["perfect-mimic-styles.css"],
       "run_at": "document_end"
     }
   ],

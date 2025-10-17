@@ -1,0 +1,245 @@
+/* Perfect Mimic Subtitle System - Zero Glitch Styles */
+
+/* Hide native YouTube subtitles */
+.ytp-caption-window-container {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Mimic container - exact positioning */
+.mimic-subtitle-container {
+  font-family: 'Roboto', 'YouTube Noto', sans-serif !important;
+  font-size: 20px !important;
+  line-height: 1.3 !important;
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important;
+  /* Center the container, but content grows from left */
+  align-items: center !important;
+}
+
+/* Mimic line styling */
+.mimic-line {
+  text-align: left !important; /* Content aligned left */
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  max-width: 90% !important;
+  /* Container centered, but text inside starts from left */
+  display: inline-block !important;
+}
+
+/* Word styling - minimal by default */
+.mimic-word {
+  cursor: pointer !important;
+  display: inline !important;
+  transition: transform 0.15s ease !important;
+  border-radius: 3px !important;
+  padding: 0px !important; /* No padding for unmarked */
+  margin: 0 !important;
+}
+
+.mimic-word:hover {
+  transform: scale(1.05) !important;
+  z-index: 10 !important;
+}
+
+/* Unmarked words - plain white, no background */
+.unmarked-word {
+  color: white !important;
+  background: none !important;
+  font-weight: normal !important;
+  box-shadow: none !important;
+}
+
+.unmarked-word:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 3px !important;
+}
+
+/* Known words - Green (only when marked) */
+.known-word {
+  background: #10b981 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 2px 4px !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+}
+
+.known-word:hover {
+  background: #34d399 !important;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Unknown words - Orange (only when marked) */
+.unknown-word {
+  background: #f59e0b !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 2px 4px !important;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3) !important;
+}
+
+.unknown-word:hover {
+  background: #fbbf24 !important;
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.5) !important;
+}
+
+/* Click animation */
+.mimic-word:active {
+  transform: scale(0.95) !important;
+}
+
+/* Smooth line transitions - match YouTube's behavior */
+.mimic-line {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .mimic-subtitle-container {
+    font-size: 18px !important;
+    padding-left: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mimic-subtitle-container {
+    font-size: 16px !important;
+    padding-left: 10px !important;
+  }
+  
+  .mimic-line {
+    max-width: 95% !important;
+  }
+}
+
+/* ===== POPUP MENU STYLES ===== */
+
+/* Word menu popup */
+.subtitle-word-menu {
+  position: fixed;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  min-width: 180px;
+  opacity: 0;
+  transform: translateY(-4px);
+  animation: menuFadeIn 0.2s ease forwards;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@keyframes menuFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Word title in menu */
+.subtitle-word-menu > div:first-child {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Menu buttons */
+.subtitle-word-menu button {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.subtitle-word-menu button:last-child {
+  border-bottom: none;
+}
+
+.subtitle-word-menu button:hover {
+  background: #f8fafc;
+}
+
+/* Button icons */
+.button-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Action-specific styles */
+.known-action .button-icon {
+  background: #10b981;
+  color: white;
+}
+
+.known-action:hover {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.unknown-action .button-icon {
+  background: #f59e0b;
+  color: white;
+}
+
+.unknown-action:hover {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.remove-action .button-icon {
+  background: #ef4444;
+  color: white;
+}
+
+.remove-action:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+/* Word status badge in menu */
+.word-status-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.word-status-badge.known {
+  background: #ecfdf5;
+  color: #10b981;
+  border: 1px solid #a7f3d0;
+}
+
+.word-status-badge.unknown {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
