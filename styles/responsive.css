@@ -3,45 +3,45 @@
 /* ===== RESPONSIVE DESIGN ===== */
 
 /* Mobile devices */
-@media (max-width: 767px) {
+@media (max-width: var(--breakpoint-mobile)) {
   .mimic-subtitle-container {
     bottom: 10% !important;
     max-width: 95% !important;
   }
 
   .mimic-line {
-    padding: 4px 8px !important;
+    padding: var(--space-sm) var(--space-md) !important;
   }
 }
 
 /* Desktop and larger screens */
-@media (min-width: 1200px) {
+@media (min-width: var(--breakpoint-desktop)) {
   .mimic-subtitle-container {
     bottom: 14% !important;
   }
 
   .mimic-line {
-    padding: 8px 16px !important;
+    padding: var(--space-lg) var(--space-xl) !important;
   }
 }
 
 /* ===== RESPONSIVE MENU FOR MOBILE ===== */
-@media (max-width: 575px) {
+@media (max-width: var(--breakpoint-mobile-menu)) {
   .subtitle-word-menu {
     min-width: 180px;
     max-width: 90vw;
-    border-radius: 10px;
+    border-radius: var(--radius);
   }
 
   .subtitle-word-menu > div:first-child {
-    padding: 12px 14px;
-    font-size: 13px;
+    padding: var(--space-lg) var(--space-xl);
+    font-size: var(--font-base);
   }
 
   .subtitle-word-menu button {
     min-height: 52px;
-    padding: 16px 14px;
-    font-size: 13px;
+    padding: var(--space-2xl) var(--space-xl);
+    font-size: var(--font-base);
   }
 
   .button-icon {

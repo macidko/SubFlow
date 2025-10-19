@@ -1,3 +1,6 @@
+/* Import centralized config */
+@import url('css-config.css');
+
 /* Perfect Mimic Subtitle System - Zero Layout Shift, Left-Aligned Words */
 
 /* Hide native YouTube subtitles */
@@ -8,24 +11,24 @@
 
 /* Mimic container - CENTERED FRAME, LEFT-ALIGNED CONTENT */
 .mimic-subtitle-container {
-  font-family: 'Roboto', 'YouTube Noto', sans-serif !important;
+  font-family: var(--font-family-subtitle) !important;
   line-height: 1.4 !important;
-  color: white !important;
+  color: var(--text-inverse) !important;
   text-shadow:
-    1px 1px 2px rgba(0, 0, 0, 0.9),
-    0 0 4px rgba(0, 0, 0, 0.7) !important;
+    1px 1px 2px var(--subtitle-shadow),
+    0 0 4px var(--subtitle-shadow-secondary) !important;
   position: absolute !important;
-  bottom: 12% !important;
+  bottom: var(--subtitle-bottom) !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   width: auto !important;
-  max-width: 90% !important;
+  max-width: var(--subtitle-max-width) !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important; /* LEFT ALIGN LINES */
   justify-content: center !important;
-  gap: 4px !important;
-  z-index: 9999 !important;
+  gap: var(--subtitle-gap) !important;
+  z-index: var(--z-subtitle) !important;
   pointer-events: none !important;
 }
 
@@ -39,10 +42,10 @@
   width: auto !important; /* FIT CONTENT */
   max-width: none !important; /* NO MAX WIDTH LIMIT */
   margin: 0 !important; /* NO AUTO CENTERING */
-  padding: 6px 12px !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  border-radius: 3px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  padding: var(--subtitle-line-padding-y) var(--subtitle-line-padding-x) !important;
+  background: var(--subtitle-bg) !important;
+  border-radius: var(--subtitle-line-radius) !important;
+  box-shadow: 0 2px 8px var(--subtitle-text-shadow) !important;
   pointer-events: auto !important;
   transition: none !important;
 }
@@ -61,9 +64,9 @@
 }
 
 .mimic-word:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4) !important;
-  border-radius: 3px !important;
+  background: var(--word-hover-bg) !important;
+  box-shadow: 0 0 8px var(--word-hover-shadow) !important;
+  border-radius: var(--radius-sm) !important;
 }
 
 /* Unmarked words - plain white */
@@ -74,35 +77,35 @@
 
 /* Known words - Color only (NO padding/background) - BOLD for visibility */
 .known-word {
-  color: #10b981 !important;
-  font-weight: 700 !important;
+  color: var(--known) !important;
+  font-weight: var(--font-weight-bold) !important;
   text-decoration: none !important;
   text-shadow: none !important; /* REMOVED GLOW */
 }
 
 .known-word:hover {
-  color: #34d399 !important;
+  color: var(--known-hover) !important;
   background: none !important; /* REMOVED BACKGROUND */
   text-shadow: none !important; /* REMOVED GLOW */
 }
 
 /* Unknown words - Color only (NO padding/background) - BOLD for visibility */
 .unknown-word {
-  color: #f59e0b !important;
-  font-weight: 700 !important;
+  color: var(--learning) !important;
+  font-weight: var(--font-weight-bold) !important;
   text-decoration: none !important;
   text-shadow: none !important; /* REMOVED GLOW */
 }
 
 .unknown-word:hover {
-  color: #fbbf24 !important;
+  color: var(--learning-hover) !important;
   background: none !important; /* REMOVED BACKGROUND */
   text-shadow: none !important; /* REMOVED GLOW */
 }
 
 /* Click feedback - subtle */
 .mimic-word:active {
-  opacity: 0.7 !important;
+  opacity: var(--word-active-opacity) !important;
 }
 
 /* Remove line transitions that cause layout shift */

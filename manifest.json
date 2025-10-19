@@ -24,6 +24,7 @@
         "perfect-mimic.js"
       ],
       "css": [
+        "styles/css-config.css",
         "styles/base.css",
         "styles/subtitle-core.css",
         "styles/subtitle-words.css",

@@ -173,6 +173,12 @@ window.MenuSystem = class MenuSystem {
     document.body.appendChild(menu);
     this.currentMenu = menu;
 
+    console.log('🎭 Word menu created and added to DOM:', menu);
+    console.log('Menu position:', menuX, menuY);
+    console.log('Menu style:', menu.style.cssText);
+    console.log('Viewport size:', viewportWidth, 'x', viewportHeight);
+    console.log('Word rect:', rect);
+
     // Click outside handler
     const handleClickOutside = (e) => {
       if (!menu.contains(e.target) && !wordSpan.contains(e.target)) {

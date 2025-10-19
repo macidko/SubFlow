@@ -4,633 +4,251 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SubFlow</title>
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #ffffff;
-            --surface: #f8fafc;
-            --border: #e2e8f0;
-            --text: #1e293b;
-            --text-secondary: #64748b;
-            --text-muted: #94a3b8;
-            --known: #10b981;
-            --learning: #f59e0b;
-            --danger: #ef4444;
-            --radius: 6px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            min-width: 360px;
-            max-width: 420px;
-            width: 100%;
-            min-height: 500px;
-            max-height: 600px;
-            height: auto;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 13px;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-
-        /* Main Tabs */
-        .main-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg);
-        }
-
-        .main-tab {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .main-tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        .main-tab:hover {
-            background: var(--surface);
-        }
-
-        /* Tab Panels */
-        .tab-panel {
-            display: none;
-            min-height: 450px;
-            max-height: calc(100vh - 45px);
-            overflow-x: hidden;
-            overflow-y: auto;
-            flex-direction: column;
-        }
-
-        .tab-panel.active {
-            display: flex;
-        }
-
-        /* ===== HOME TAB ===== */
-        .home-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .brand-icon {
-            width: 20px;
-            height: 20px;
-            background: var(--primary);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .brand-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text);
-        }
-
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            background: var(--surface);
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--known);
-        }
-
-        .status-dot.inactive {
-            background: var(--danger);
-        }
-
-        .lang-selector {
-            padding: 3px 8px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 11px;
-            background: var(--bg);
-            color: var(--text);
-            cursor: pointer;
-        }
-
-        .lang-selector:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        /* Word Tabs */
-        .word-tabs {
-            display: flex;
-            padding: 8px 16px;
-            gap: 4px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .word-tab {
-            padding: 6px 12px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 500;
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .word-tab.active {
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .word-tab:hover:not(.active) {
-            background: rgba(0, 0, 0, 0.03);
-        }
-
-        .word-tab .count {
-            margin-left: 4px;
-            font-size: 11px;
-            opacity: 0.7;
-        }
-
-        /* Search */
-        .search-box {
-            padding: 8px 16px;
-            background: var(--bg);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 6px 10px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 12px;
-            background: var(--surface);
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        /* Words List */
-        .words-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 16px;
-        }
-
-        .word-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            margin-bottom: 6px;
-            background: var(--surface);
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: all 0.2s;
-            min-height: 52px;
-        }
-
-        .word-item:hover {
-            background: rgba(0, 0, 0, 0.03);
-            transform: none;
-        }
-
-        .word-item:active {
-            transform: scale(0.98);
-        }
-
-        .word-dot {
-            width: 10px;
-            height: 10px;
-            min-width: 10px;
-            min-height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .word-dot.known {
-            background: var(--known);
-        }
-
-        .word-dot.learning {
-            background: var(--learning);
-        }
-
-        .word-info {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .word-text {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .word-translation {
-            font-size: 12px;
-            color: var(--text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .word-translation.loading {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-muted);
-            text-align: center;
-            padding: 20px;
-        }
-
-        .empty-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-            opacity: 0.5;
-        }
-
-        .empty-text {
-            font-size: 12px;
-        }
-
-        /* ===== SETTINGS TAB ===== */
-        .settings-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-        }
-
-        .setting-section {
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .setting-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            background: var(--surface);
-            border-radius: var(--radius);
-            margin-bottom: 6px;
-        }
-
-        .setting-label {
-            font-size: 12px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 40px;
-            height: 22px;
-            background: var(--border);
-            border-radius: 11px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .toggle-switch.active {
-            background: var(--primary);
-        }
-
-        .toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: left 0.2s;
-        }
-
-        .toggle-switch.active::after {
-            left: 20px;
-        }
-
-        .color-picker-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .color-input {
-            width: 50px;
-            height: 32px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            cursor: pointer;
-        }
-
-        .color-label {
-            flex: 1;
-            font-size: 12px;
-            color: var(--text);
-        }
-
-        .setting-btn {
-            width: 100%;
-            min-height: 44px;
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--text);
-            border-radius: var(--radius);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .setting-btn:hover {
-            background: #e2e8f0;
-        }
-
-        .setting-btn.primary {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-
-        .setting-btn.primary:hover {
-            background: var(--primary-hover);
-        }
-
-        .setting-btn.danger {
-            color: var(--danger);
-            border-color: var(--danger);
-        }
-
-        .setting-btn.danger:hover {
-            background: #fef2f2;
-        }
-
-        /* Scrollbar - Better visibility and usability */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--surface);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-            border: 2px solid var(--surface);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
-
-        ::-webkit-scrollbar-thumb:active {
-            background: var(--text);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/popup.css">
 </head>
 <body>
-    <!-- Main Navigation Tabs -->
-    <div class="main-tabs">
+    <!-- Navigation -->
+    <nav class="main-tabs">
         <button class="main-tab active" data-tab="home">Ana Ekran</button>
         <button class="main-tab" data-tab="settings">Ayarlar</button>
-    </div>
+    </nav>
 
-    <!-- Home Tab Panel -->
-    <div class="tab-panel active" id="homeTab">
-        <!-- Header with logo and controls -->
-        <div class="home-header">
-            <div class="brand">
-                <div class="brand-icon">SF</div>
-                <div class="brand-name">SubFlow</div>
-            </div>
-            <div class="header-controls">
-                <div class="status-indicator">
-                    <span class="status-dot" id="statusDot"></span>
-                    <span id="statusText">Aktif</span>
+    <!-- Main Content -->
+    <main>
+        <!-- Home Tab -->
+        <section class="tab-panel active" id="homeTab">
+            <header class="home-header">
+                <div class="brand">
+                    <div class="brand-icon">SF</div>
+                    <h1 class="brand-name">SubFlow</h1>
                 </div>
-                <select id="targetLang" class="lang-selector">
-                    <option value="tr">🇹🇷 TR</option>
-                    <option value="en">🇺🇸 EN</option>
-                    <option value="ar">🇸🇦 AR</option>
-                    <option value="de">🇩🇪 DE</option>
-                    <option value="es">🇪🇸 ES</option>
-                    <option value="fr">🇫🇷 FR</option>
-                    <option value="it">🇮🇹 IT</option>
-                    <option value="ja">🇯🇵 JA</option>
-                    <option value="ko">🇰🇷 KO</option>
-                    <option value="pt">🇵🇹 PT</option>
-                    <option value="ru">🇷🇺 RU</option>
-                    <option value="zh-CN">🇨🇳 ZH</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Word Filter Tabs -->
-        <div class="word-tabs">
-            <button class="word-tab active" data-filter="all">
-                Tümü <span class="count" id="allCount">0</span>
-            </button>
-            <button class="word-tab" data-filter="known">
-                Bilinen <span class="count" id="knownCount">0</span>
-            </button>
-            <button class="word-tab" data-filter="learning">
-                Öğrenilen <span class="count" id="learningCount">0</span>
-            </button>
-        </div>
-
-        <!-- Search Box -->
-        <div class="search-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Kelime ara...">
-        </div>
-
-        <!-- Words List -->
-        <div class="words-list" id="wordsList">
-            <div class="empty-state">
-                <div class="empty-icon">📚</div>
-                <div class="empty-text">Henüz kelime yok<br>YouTube'da Ctrl+Tık ile başlayın</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Tab Panel -->
-    <div class="tab-panel" id="settingsTab">
-        <div class="settings-content">
-            <!-- General Settings -->
-            <div class="setting-section">
-                <div class="section-title">Genel</div>
-                <div class="setting-item">
-                    <div class="setting-label">
-                        <span>⚡</span>
-                        <span>Eklentiyi Etkinleştir</span>
+                <div class="header-controls">
+                    <div class="status-indicator">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">Aktif</span>
                     </div>
-                    <div class="toggle-switch active" id="toggleExtension">
-                        <input type="checkbox" id="isActiveCheckbox" checked hidden>
-                    </div>
+                    <select id="targetLang" class="lang-selector">
+                        <option value="tr">🇹🇷 TR</option>
+                        <option value="en">🇺🇸 EN</option>
+                        <option value="ar">🇸🇦 AR</option>
+                        <option value="de">🇩🇪 DE</option>
+                        <option value="es">🇪🇸 ES</option>
+                        <option value="fr">🇫🇷 FR</option>
+                        <option value="it">🇮🇹 IT</option>
+                        <option value="ja">🇯🇵 JA</option>
+                        <option value="ko">🇰🇷 KO</option>
+                        <option value="pt">🇵🇹 PT</option>
+                        <option value="ru">🇷🇺 RU</option>
+                        <option value="zh-CN">🇨🇳 ZH</option>
+                    </select>
                 </div>
-                <div class="setting-item">
-                    <div class="setting-label">
-                        <span>🌐</span>
-                        <span>Çevirileri Göster</span>
-                    </div>
-                    <div class="toggle-switch active" id="toggleTranslations">
-                        <input type="checkbox" id="showTranslationsCheckbox" checked hidden>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <div class="setting-label">
-                        <span>⏸</span>
-                        <span>Kelimelere Hover'da Durdur</span>
-                    </div>
-                    <div class="toggle-switch active" id="togglePauseOnHover">
-                        <input type="checkbox" id="pauseOnHoverCheckbox" checked hidden>
-                    </div>
-                </div>
-            </div>
+            </header>
 
-            <!-- Color Settings -->
-            <div class="setting-section">
-                <div class="section-title">Renkler</div>
-                <div class="setting-item">
-                    <div class="color-picker-row">
-                        <input type="color" id="knownColor" class="color-input" value="#10b981">
-                        <span class="color-label">✓ Bilinen Kelimeler</span>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <div class="color-picker-row">
-                        <input type="color" id="learningColor" class="color-input" value="#f59e0b">
-                        <span class="color-label">📚 Öğrenilen Kelimeler</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="setting-section">
-                <div class="section-title">İşlemler</div>
-                <button class="setting-btn primary" id="refreshBtn">
-                    🔄 YouTube'u Yenile
+            <!-- Word Filter Tabs -->
+            <div class="word-tabs">
+                <button class="word-tab active" data-filter="all">
+                    Tümü <span class="count" id="allCount">12</span>
                 </button>
-                <button class="setting-btn" id="translateAllBtn">
-                    🌐 Tüm Kelimeleri Çevir
+                <button class="word-tab" data-filter="known">
+                    Bilinen <span class="count" id="knownCount">2</span>
                 </button>
-                <button class="setting-btn" id="exportBtn">
-                    📤 Kelimeleri Dışa Aktar
-                </button>
-                <button class="setting-btn" id="importBtn">
-                    📥 Kelimeleri İçe Aktar
-                </button>
-                <button class="setting-btn danger" id="clearBtn">
-                    🗑 Tüm Kelimeleri Temizle
+                <button class="word-tab" data-filter="learning">
+                    Öğrenilen <span class="count" id="learningCount">10</span>
                 </button>
             </div>
 
-            <!-- Info -->
-            <div class="setting-section">
-                <div class="section-title">Bilgi</div>
-                <div class="setting-item">
-                    <div class="setting-label">
-                        <span>ℹ️</span>
-                        <span>Versiyon 2.1.0</span>
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Kelime ara...">
+            </div>
+
+            <!-- Words List -->
+            <div class="words-list" id="wordsList">
+                <div class="word-item" data-word="also" data-status="known">
+                    <div class="word-dot known"></div>
+                    <div class="word-info">
+                        <div class="word-text">also</div>
+                        <div class="word-translation" data-word="also">Ayrıca</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="and" data-status="known">
+                    <div class="word-dot known"></div>
+                    <div class="word-info">
+                        <div class="word-text">and</div>
+                        <div class="word-translation" data-word="and">Ve</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="overleveraged" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">overleveraged</div>
+                        <div class="word-translation" data-word="overleveraged">aşırı kaldıraçlı</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="react" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">react</div>
+                        <div class="word-translation" data-word="react">tepki vermek</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="talk" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">talk</div>
+                        <div class="word-translation" data-word="talk">konuşmak</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="that" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">that</div>
+                        <div class="word-translation" data-word="that">O</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="then" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">then</div>
+                        <div class="word-translation" data-word="then">Daha sonra</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="think" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">think</div>
+                        <div class="word-translation" data-word="think">düşünmek</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="this" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">this</div>
+                        <div class="word-translation" data-word="this">Bu</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="to" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">to</div>
+                        <div class="word-translation" data-word="to">ile</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="want" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">want</div>
+                        <div class="word-translation" data-word="want">istek</div>
+                    </div>
+                </div>
+
+                <div class="word-item" data-word="you" data-status="learning">
+                    <div class="word-dot learning"></div>
+                    <div class="word-info">
+                        <div class="word-text">you</div>
+                        <div class="word-translation" data-word="you">Sen</div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <input type="file" id="fileInput" accept=".json" />
+        <!-- Settings Tab -->
+        <section class="tab-panel" id="settingsTab">
+            <div class="settings-content">
+                <!-- General Settings -->
+                <section class="setting-section">
+                    <h2 class="section-title">Genel</h2>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>⚡</span>
+                            <span>Eklentiyi Etkinleştir</span>
+                        </div>
+                        <div class="toggle-switch active" id="toggleExtension">
+                            <input type="checkbox" id="isActiveCheckbox" checked hidden>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>🌐</span>
+                            <span>Çevirileri Göster</span>
+                        </div>
+                        <div class="toggle-switch active" id="toggleTranslations">
+                            <input type="checkbox" id="showTranslationsCheckbox" checked hidden>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>⏸</span>
+                            <span>Kelimelere Hover'da Durdur</span>
+                        </div>
+                        <div class="toggle-switch active" id="togglePauseOnHover">
+                            <input type="checkbox" id="pauseOnHoverCheckbox" checked hidden>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Color Settings -->
+                <section class="setting-section">
+                    <h2 class="section-title">Renkler</h2>
+                    <div class="setting-item">
+                        <div class="color-picker-row">
+                            <input type="color" id="knownColor" class="color-input" value="#10b981">
+                            <span class="color-label">✓ Bilinen Kelimeler</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="color-picker-row">
+                            <input type="color" id="learningColor" class="color-input" value="#f59e0b">
+                            <span class="color-label">📚 Öğrenilen Kelimeler</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Actions -->
+                <section class="setting-section">
+                    <h2 class="section-title">İşlemler</h2>
+                    <button class="setting-btn primary" id="refreshBtn">
+                        🔄 YouTube'u Yenile
+                    </button>
+                    <button class="setting-btn" id="translateAllBtn">
+                        🌐 Tüm Kelimeleri Çevir
+                    </button>
+                    <button class="setting-btn" id="exportBtn">
+                        📤 Kelimeleri Dışa Aktar
+                    </button>
+                    <button class="setting-btn" id="importBtn">
+                        📥 Kelimeleri İçe Aktar
+                    </button>
+                    <button class="setting-btn danger" id="clearBtn">
+                        🗑 Tüm Kelimeleri Temizle
+                    </button>
+                </section>
+
+                <!-- Info -->
+                <section class="setting-section">
+                    <h2 class="section-title">Bilgi</h2>
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <span>ℹ️</span>
+                            <span>Versiyon 2.1.0</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <input type="file" id="fileInput" accept=".json" hidden>
     
     <!-- Core modules (load first) -->
     <script src="js/storage/storage-manager.js"></script>
@@ -639,6 +257,14 @@
     
     <!-- Services -->
     <script src="js/services/translation-service.js"></script>
+    
+    <!-- Popup modules -->
+    <script src="js/popup/ui-manager.js"></script>
+    <script src="js/popup/data-manager.js"></script>
+    <script src="js/popup/event-handlers.js"></script>
+    <script src="js/popup/search-manager.js"></script>
+    <script src="js/popup/translation-manager.js"></script>
+    <script src="js/popup/export-import-manager.js"></script>
     
     <!-- Popup logic -->
     <script src="js/popup/popup.js"></script>

@@ -32,6 +32,68 @@ class PopupUI {
     // Search
     this.searchQuery = '';
     
+    // Initialize managers (without DOM elements yet)
+    this.uiManager = null;
+    this.dataManager = null;
+    this.eventHandlers = null;
+    this.searchManager = null;
+    this.translationManager = null;
+    this.exportImportManager = null;
+  }
+
+  static async create() {
+    const instance = new PopupUI();
+    await instance.init();
+    return instance;
+  }
+
+  async init() {
+    try {
+      // Wait for DOM to be ready
+      if (document.readyState !== 'complete') {
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            resolve();
+          } else {
+            window.addEventListener('load', resolve);
+          }
+        });
+      }
+
+      // Initialize DOM elements
+      this.initializeDOMElements();
+
+      // Initialize managers
+      this.uiManager = new window.UiManager(this);
+      this.dataManager = new window.DataManager(this);
+      this.eventHandlers = new window.EventHandlers(this);
+      this.searchManager = new window.SearchManager(this);
+      this.translationManager = new window.TranslationManager(this);
+      this.exportImportManager = new window.ExportImportManager(this);
+
+      // Initialize storage manager
+      await storageManager.initialize(STORAGE_SCHEMA);
+      
+      // Initialize translation service
+      this.translationService = await TranslationService.create();
+      
+      // Load all settings
+      await this.dataManager.loadStoredData();
+      
+      // Check connection
+      await this.uiManager.checkConnectionStatus();
+      
+      // Setup UI
+      this.eventHandlers.setupEventListeners();
+      this.uiManager.updateUI();
+      
+      console.log('✅ Popup v2.0 initialized');
+    } catch (error) {
+      console.error('❌ Init error:', error);
+    }
+  }
+
+  initializeDOMElements() {
     // DOM Elements - Main Tabs
     this.mainTabs = document.querySelectorAll('.main-tab');
     this.tabPanels = document.querySelectorAll('.tab-panel');
@@ -68,472 +130,65 @@ class PopupUI {
     this.fileInput = document.getElementById('fileInput');
   }
 
-  static async create() {
-    const instance = new PopupUI();
-    await instance.init();
-    return instance;
-  }
-
-  async init() {
-    try {
-      // Initialize storage manager
-      await storageManager.initialize(STORAGE_SCHEMA);
-      
-      // Initialize translation service
-      this.translationService = await TranslationService.create();
-      
-      // Load all settings
-      await this.loadStoredData();
-      
-      // Check connection
-      await this.checkConnectionStatus();
-      
-      // Setup UI
-      this.setupEventListeners();
-      this.updateUI();
-      
-      console.log('✅ Popup v2.0 initialized');
-    } catch (error) {
-      console.error('❌ Init error:', error);
-    }
-  }
-
-  async loadStoredData() {
-    const data = await storageManager.get(STORAGE_SCHEMA);
-    
-    this.knownWords = new Set(data.knownWords || []);
-    this.unknownWords = new Set(data.unknownWords || []);
-    this.isActive = data.isActive !== false;
-    this.pauseOnHover = data.pauseOnHover !== false;
-    this.showTranslations = data.showTranslations !== false;
-    this.targetLang = data.targetLang || 'tr';
-    this.sourceLang = data.sourceLang || 'en';
-    this.knownColor = data.knownColor || '#10b981';
-    this.learningColor = data.learningColor || '#f59e0b';
-    
-    console.log('📦 Settings loaded:', {
-      known: this.knownWords.size,
-      learning: this.unknownWords.size,
-      pauseOnHover: this.pauseOnHover,
-      colors: { known: this.knownColor, learning: this.learningColor }
-    });
-    
-    // Update UI elements
-    this.targetLangSelect.value = this.targetLang;
-    this.showTranslationsCheckbox.checked = this.showTranslations;
-    this.isActiveCheckbox.checked = this.isActive;
-    this.pauseOnHoverCheckbox.checked = this.pauseOnHover;
-    this.knownColorInput.value = this.knownColor;
-    this.learningColorInput.value = this.learningColor;
-    
-    // Update toggle states
-    this.toggleTranslations.classList.toggle('active', this.showTranslations);
-    this.toggleExtension.classList.toggle('active', this.isActive);
-    this.togglePauseOnHover.classList.toggle('active', this.pauseOnHover);
-  }
-
-  async checkConnectionStatus() {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const isYouTube = tab?.url?.includes('youtube.com/watch');
-      
-      if (isYouTube && this.isActive) {
-        this.statusDot.classList.remove('inactive');
-        this.statusText.textContent = 'Aktif';
-      } else {
-        this.statusDot.classList.add('inactive');
-        this.statusText.textContent = 'Pasif';
-      }
-    } catch (error) {
-      this.statusDot.classList.add('inactive');
-      this.statusText.textContent = 'Bağlı değil';
-    }
-  }
-
-  setupEventListeners() {
-    // Main Tabs
-    this.mainTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
-        this.switchMainTab(tabName);
-      });
-    });
-    
-    // Word Filter Tabs
-    this.wordTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const filter = tab.dataset.filter;
-        this.switchWordFilter(filter);
-      });
-    });
-    
-    // Search
-    this.searchInput.addEventListener('input', (e) => {
-      this.searchQuery = e.target.value.toLowerCase().trim();
-      this.updateWordsList();
-    });
-    
-    // Language selector
-    this.targetLangSelect.addEventListener('change', async (e) => {
-      this.targetLang = e.target.value;
-      await storageManager.set({ targetLang: this.targetLang });
-      this.updateWordsList();
-    });
-    
-    // Toggle Extension
-    this.toggleExtension.addEventListener('click', async () => {
-      this.isActive = !this.isActive;
-      this.isActiveCheckbox.checked = this.isActive;
-      
-      if (this.isActive) {
-        this.toggleExtension.classList.add('active');
-      } else {
-        this.toggleExtension.classList.remove('active');
-      }
-      
-      await storageManager.set({ isActive: this.isActive });
-      await broadcastToAllTabs(MESSAGE_TYPES.TOGGLE, { isActive: this.isActive });
-      await this.checkConnectionStatus();
-    });
-    
-    // Toggle Translations
-    this.toggleTranslations.addEventListener('click', async () => {
-      this.showTranslations = !this.showTranslations;
-      this.showTranslationsCheckbox.checked = this.showTranslations;
-      
-      if (this.showTranslations) {
-        this.toggleTranslations.classList.add('active');
-      } else {
-        this.toggleTranslations.classList.remove('active');
-      }
-      
-      await storageManager.set({ showTranslations: this.showTranslations });
-      this.updateWordsList();
-    });
-    
-    // Toggle Pause on Hover
-    this.togglePauseOnHover.addEventListener('click', async () => {
-      this.pauseOnHover = !this.pauseOnHover;
-      this.pauseOnHoverCheckbox.checked = this.pauseOnHover;
-      this.togglePauseOnHover.classList.toggle('active', this.pauseOnHover);
-      
-      await storageManager.set({ pauseOnHover: this.pauseOnHover });
-      await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
-        pauseOnHover: this.pauseOnHover
-      });
-      
-      console.log('⏸ Pause on hover:', this.pauseOnHover);
-    });
-    
-    // Color pickers
-    this.knownColorInput.addEventListener('change', async (e) => {
-      this.knownColor = e.target.value;
-      await storageManager.set({ knownColor: this.knownColor });
-      await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
-        knownColor: this.knownColor,
-        learningColor: this.learningColor
-      });
-    });
-    
-    this.learningColorInput.addEventListener('change', async (e) => {
-      this.learningColor = e.target.value;
-      await storageManager.set({ learningColor: this.learningColor });
-      await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
-        knownColor: this.knownColor,
-        learningColor: this.learningColor
-      });
-    });
-    
-    // Action Buttons
-    this.refreshBtn.addEventListener('click', () => this.refreshYouTube());
-    this.translateAllBtn.addEventListener('click', () => this.translateAllWords());
-    this.exportBtn.addEventListener('click', () => this.exportWords());
-    this.importBtn.addEventListener('click', () => this.fileInput.click());
-    this.clearBtn.addEventListener('click', () => this.clearAllWords());
-    
-    this.fileInput.addEventListener('change', (e) => this.importWords(e));
-  }
-
+  // Delegate methods to managers
   switchMainTab(tabName) {
-    this.currentTab = tabName;
-    
-    this.mainTabs.forEach(tab => {
-      if (tab.dataset.tab === tabName) {
-        tab.classList.add('active');
-      } else {
-        tab.classList.remove('active');
-      }
-    });
-    
-    this.tabPanels.forEach(panel => {
-      if (panel.id === tabName + 'Tab') {
-        panel.classList.add('active');
-      } else {
-        panel.classList.remove('active');
-      }
-    });
+    this.uiManager.switchMainTab(tabName);
   }
 
   switchWordFilter(filter) {
-    this.currentFilter = filter;
-    
-    this.wordTabs.forEach(tab => {
-      if (tab.dataset.filter === filter) {
-        tab.classList.add('active');
-      } else {
-        tab.classList.remove('active');
-      }
-    });
-    
-    this.updateWordsList();
+    this.uiManager.switchWordFilter(filter);
   }
 
   updateUI() {
-    this.updateCounts();
-    this.updateWordsList();
+    this.uiManager.updateUI();
   }
 
   updateCounts() {
-    const total = this.knownWords.size + this.unknownWords.size;
-    this.allCount.textContent = total;
-    this.knownCount.textContent = this.knownWords.size;
-    this.learningCount.textContent = this.unknownWords.size;
+    this.uiManager.updateCounts();
   }
 
   updateWordsList() {
-    // Get filtered words
-    let words = [];
-    
-    if (this.currentFilter === 'all') {
-      words = [
-        ...Array.from(this.knownWords).map(w => ({ word: w, status: 'known' })),
-        ...Array.from(this.unknownWords).map(w => ({ word: w, status: 'learning' }))
-      ];
-    } else if (this.currentFilter === 'known') {
-      words = Array.from(this.knownWords).map(w => ({ word: w, status: 'known' }));
-    } else if (this.currentFilter === 'learning') {
-      words = Array.from(this.unknownWords).map(w => ({ word: w, status: 'learning' }));
-    }
-    
-    // Apply search filter
-    if (this.searchQuery) {
-      words = words.filter(w => w.word.toLowerCase().includes(this.searchQuery));
-    }
-    
-    // Sort alphabetically
-    words.sort((a, b) => a.word.localeCompare(b.word));
-    
-    // Render
-    if (words.length === 0) {
-      this.wordsList.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📚</div>
-          <div class="empty-text">
-            ${this.searchQuery ? 'Kelime bulunamadı' : 'Henüz kelime yok<br>YouTube\'da Ctrl+Tık ile başlayın'}
-          </div>
-        </div>
-      `;
-    } else {
-      this.wordsList.innerHTML = words.map(w => this.createWordElement(w)).join('');
-      
-      // Add click listeners to word items
-      this.wordsList.querySelectorAll('.word-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const word = item.dataset.word;
-          this.toggleWordStatus(word);
-        });
-      });
-    }
+    this.uiManager.updateWordsList();
   }
 
-  createWordElement({ word, status }) {
-    const translationHTML = this.showTranslations 
-      ? `<div class="word-translation loading" data-word="${word}">Çeviriliyor...</div>`
-      : '';
-    
-    const item = `
-      <div class="word-item" data-word="${word}" data-status="${status}">
-        <div class="word-dot ${status}"></div>
-        <div class="word-info">
-          <div class="word-text">${word}</div>
-          ${translationHTML}
-        </div>
-      </div>
-    `;
-    
-    // Load translation if needed
-    if (this.showTranslations) {
-      setTimeout(() => this.fetchAndDisplayTranslation(word), 50);
-    }
-    
-    return item;
+  createWordElement(wordData) {
+    return this.uiManager.createWordElement(wordData);
   }
 
-  async fetchAndDisplayTranslation(word) {
-    try {
-      const translation = await this.translationService.translate(word, this.sourceLang, this.targetLang);
-      
-      const elements = document.querySelectorAll(`[data-word="${word}"] .word-translation`);
-      elements.forEach(el => {
-        el.textContent = translation;
-        el.classList.remove('loading');
-      });
-      
-      this.translations.set(word, translation);
-    } catch (error) {
-      const elements = document.querySelectorAll(`[data-word="${word}"] .word-translation`);
-      elements.forEach(el => {
-        el.textContent = '❌';
-        el.classList.remove('loading');
-      });
-    }
+  async checkConnectionStatus() {
+    await this.uiManager.checkConnectionStatus();
+  }
+
+  async loadStoredData() {
+    await this.dataManager.loadStoredData();
   }
 
   async toggleWordStatus(word) {
-    // Use unified 3-state cycle
-    const currentState = getWordState(word, this.knownWords, this.unknownWords);
-    const nextState = getNextWordState(currentState);
-    
-    console.log(`🔄 Toggle: ${word} (${currentState} → ${nextState})`);
-    
-    // Update using storage manager (atomic operations!)
-    switch (nextState) {
-      case WORD_STATES.KNOWN:
-        // Move to known
-        await storageManager.removeFromSet('unknownWords', word);
-        await storageManager.addToSet('knownWords', word);
-        this.knownWords.add(word);
-        this.unknownWords.delete(word);
-        break;
-        
-      case WORD_STATES.LEARNING:
-        // Move to learning
-        await storageManager.removeFromSet('knownWords', word);
-        await storageManager.addToSet('unknownWords', word);
-        this.unknownWords.add(word);
-        this.knownWords.delete(word);
-        break;
-        
-      case WORD_STATES.UNMARKED:
-        // Remove from both
-        await storageManager.removeFromSet('knownWords', word);
-        await storageManager.removeFromSet('unknownWords', word);
-        this.knownWords.delete(word);
-        this.unknownWords.delete(word);
-        break;
-    }
-    
-    // Notify content script using new protocol
-    await broadcastToAllTabs(MESSAGE_TYPES.WORDS_UPDATED, {
-      knownWords: Array.from(this.knownWords),
-      unknownWords: Array.from(this.unknownWords)
-    });
-    
-    this.updateUI();
+    await this.dataManager.toggleWordStatus(word);
+  }
+
+  async fetchAndDisplayTranslation(word) {
+    await this.translationManager.fetchAndDisplayTranslation(word);
   }
 
   async translateAllWords() {
-    const allWords = [...this.knownWords, ...this.unknownWords];
-    
-    if (allWords.length === 0) {
-      alert('Henüz kelime yok!');
-      return;
-    }
-    
-    this.translateAllBtn.textContent = '⏳ Çevriliyor...';
-    this.translateAllBtn.disabled = true;
-    
-    try {
-      await this.translationService.translateBatch(allWords, this.sourceLang, this.targetLang);
-      this.updateWordsList();
-      alert(`${allWords.length} kelime çevrildi!`);
-    } catch (error) {
-      alert('Çeviri hatası!');
-    } finally {
-      this.translateAllBtn.textContent = '🌐 Tüm Kelimeleri Çevir';
-      this.translateAllBtn.disabled = false;
-    }
+    await this.eventHandlers.translateAllWords();
   }
 
   async refreshYouTube() {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.url?.includes('youtube.com')) {
-        await chrome.tabs.reload(tab.id);
-      }
-    } catch (error) {
-      console.error('Refresh error:', error);
-    }
+    await this.eventHandlers.refreshYouTube();
   }
 
   async exportWords() {
-    const data = {
-      knownWords: Array.from(this.knownWords),
-      unknownWords: Array.from(this.unknownWords),
-      translations: Object.fromEntries(this.translations),
-      exportDate: new Date().toISOString(),
-      version: '2.1.0'
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `subflow-words-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await this.exportImportManager.exportWords();
   }
 
   async importWords(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      
-      if (data.knownWords) {
-        this.knownWords = new Set([...this.knownWords, ...data.knownWords]);
-      }
-      if (data.unknownWords) {
-        this.unknownWords = new Set([...this.unknownWords, ...data.unknownWords]);
-      }
-      if (data.translations) {
-        this.translations = new Map([...this.translations, ...Object.entries(data.translations)]);
-      }
-      
-      await storageManager.set({
-        knownWords: Array.from(this.knownWords),
-        unknownWords: Array.from(this.unknownWords)
-      });
-      
-      await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
-      this.updateUI();
-      
-      alert('Kelimeler başarıyla içe aktarıldı!');
-    } catch (error) {
-      alert('İçe aktarma hatası!');
-    }
-    
-    event.target.value = '';
+    await this.exportImportManager.importWords(event);
   }
 
   async clearAllWords() {
-    if (!confirm('Tüm kelimeler silinecek. Emin misiniz?')) {
-      return;
-    }
-    
-    this.knownWords.clear();
-    this.unknownWords.clear();
-    this.translations.clear();
-    
-    await storageManager.set({
-      knownWords: [],
-      unknownWords: []
-    });
-    
-    await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
-    this.updateUI();
+    await this.dataManager.clearAllWords();
   }
 
   async sendMessageToContentScript(message) {

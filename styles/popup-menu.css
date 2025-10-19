@@ -3,21 +3,21 @@
 /* Word menu popup - modern design */
 .subtitle-word-menu {
   position: fixed;
-  background: rgba(30, 30, 35, 0.98);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  background: var(--menu-bg);
+  backdrop-filter: blur(var(--menu-blur));
+  border: 1px solid var(--menu-border);
+  border-radius: var(--menu-radius);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  z-index: 10001;
-  min-width: 200px;
-  max-width: 280px;
-  opacity: 0;
-  transform: translateY(-8px) scale(0.95);
-  animation: menuFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    0 8px 32px var(--menu-shadow),
+    0 0 0 1px var(--menu-shadow-inner);
+  z-index: 99999 !important; /* Increased z-index for testing */
+  min-width: var(--menu-min-width);
+  max-width: var(--menu-max-width);
+  opacity: 1 !important; /* Force visible for testing */
+  transform: none !important; /* Remove transform for testing */
+  /* animation: menuFadeIn var(--transition-slow) cubic-bezier(0.16, 1, 0.3, 1) forwards; */
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-family);
 }
 
 @keyframes menuFadeIn {
@@ -33,32 +33,32 @@
 
 /* Word title in menu */
 .subtitle-word-menu > div:first-child {
-  background: rgba(255, 255, 255, 0.06);
-  font-weight: 600;
-  color: #ffffff;
-  font-size: 14px;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--menu-item-bg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-inverse);
+  font-size: var(--font-lg);
+  padding: var(--menu-item-padding-y) var(--menu-item-padding-x);
+  border-bottom: 1px solid var(--menu-item-border);
   letter-spacing: 0.02em;
 }
 
 /* Menu buttons - proper touch targets */
 .subtitle-word-menu button {
   width: 100%;
-  min-height: 48px;
-  padding: 14px 16px;
+  min-height: var(--menu-item-min-height);
+  padding: var(--menu-item-padding-y) var(--menu-item-padding-x);
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast);
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: var(--menu-item-gap);
+  border-bottom: 1px solid var(--menu-item-border);
 }
 
 .subtitle-word-menu button:last-child {
@@ -66,37 +66,37 @@
 }
 
 .subtitle-word-menu button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--menu-item-hover);
+  color: var(--text-inverse);
   transform: translateX(2px);
 }
 
 .subtitle-word-menu button:focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid var(--primary);
   outline-offset: -2px;
   z-index: 1;
 }
 
 /* Button icons - proper size for touch */
 .button-icon {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  border-radius: 6px;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  min-width: var(--icon-size);
+  min-height: var(--icon-size);
+  border-radius: var(--icon-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-bold);
   flex-shrink: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Action-specific styles - premium gradients */
 .known-action .button-icon {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--known) 0%, var(--known-dark) 100%);
+  color: var(--text-inverse);
 }
 
 .known-action:hover {
