@@ -1,4 +1,11 @@
-// SubFlow - Flat Design Popup UI
+// SubFlow - Flat Design Popup UI v2.0
+// Uses StorageManager, SharedConfig, and MessageProtocol
+
+// Import shared modules
+const { STORAGE_SCHEMA, WORD_STATES, WORD_CLASSES, getNextWordState, getWordState } = window;
+const { MESSAGE_TYPES, createMessage, sendToContentScript, broadcastToAllTabs } = window;
+const storageManager = window.storageManager;
+
 class PopupUI {
   constructor() {
     // State
@@ -8,12 +15,19 @@ class PopupUI {
     this.knownWords = new Set();
     this.unknownWords = new Set();
     
+    // Settings
+    this.pauseOnHover = true;
+    
     // Translation
     this.showTranslations = true;
     this.targetLang = 'tr';
     this.sourceLang = 'en';
     this.translationService = null;
     this.translations = new Map();
+    
+    // Colors
+    this.knownColor = '#10b981';
+    this.learningColor = '#f59e0b';
     
     // Search
     this.searchQuery = '';
@@ -40,6 +54,8 @@ class PopupUI {
     this.isActiveCheckbox = document.getElementById('isActiveCheckbox');
     this.toggleTranslations = document.getElementById('toggleTranslations');
     this.showTranslationsCheckbox = document.getElementById('showTranslationsCheckbox');
+    this.togglePauseOnHover = document.getElementById('togglePauseOnHover');
+    this.pauseOnHoverCheckbox = document.getElementById('pauseOnHoverCheckbox');
     
     this.knownColorInput = document.getElementById('knownColor');
     this.learningColorInput = document.getElementById('learningColor');
@@ -60,53 +76,60 @@ class PopupUI {
 
   async init() {
     try {
+      // Initialize storage manager
+      await storageManager.initialize(STORAGE_SCHEMA);
+      
+      // Initialize translation service
       this.translationService = await TranslationService.create();
+      
+      // Load all settings
       await this.loadStoredData();
+      
+      // Check connection
       await this.checkConnectionStatus();
+      
+      // Setup UI
       this.setupEventListeners();
       this.updateUI();
+      
+      console.log('✅ Popup v2.0 initialized');
     } catch (error) {
-      console.error('Init error:', error);
+      console.error('❌ Init error:', error);
     }
   }
 
   async loadStoredData() {
-    const data = await chrome.storage.local.get({
-      knownWords: [],
-      unknownWords: [],
-      isActive: true,
-      showTranslations: true,
-      targetLang: 'tr',
-      sourceLang: 'en',
-      knownColor: '#10b981',
-      learningColor: '#f59e0b'
-    });
+    const data = await storageManager.get(STORAGE_SCHEMA);
     
     this.knownWords = new Set(data.knownWords || []);
     this.unknownWords = new Set(data.unknownWords || []);
     this.isActive = data.isActive !== false;
+    this.pauseOnHover = data.pauseOnHover !== false;
     this.showTranslations = data.showTranslations !== false;
     this.targetLang = data.targetLang || 'tr';
     this.sourceLang = data.sourceLang || 'en';
+    this.knownColor = data.knownColor || '#10b981';
+    this.learningColor = data.learningColor || '#f59e0b';
     
-    // Update UI
+    console.log('📦 Settings loaded:', {
+      known: this.knownWords.size,
+      learning: this.unknownWords.size,
+      pauseOnHover: this.pauseOnHover,
+      colors: { known: this.knownColor, learning: this.learningColor }
+    });
+    
+    // Update UI elements
     this.targetLangSelect.value = this.targetLang;
     this.showTranslationsCheckbox.checked = this.showTranslations;
     this.isActiveCheckbox.checked = this.isActive;
-    this.knownColorInput.value = data.knownColor;
-    this.learningColorInput.value = data.learningColor;
+    this.pauseOnHoverCheckbox.checked = this.pauseOnHover;
+    this.knownColorInput.value = this.knownColor;
+    this.learningColorInput.value = this.learningColor;
     
-    if (this.showTranslations) {
-      this.toggleTranslations.classList.add('active');
-    } else {
-      this.toggleTranslations.classList.remove('active');
-    }
-    
-    if (this.isActive) {
-      this.toggleExtension.classList.add('active');
-    } else {
-      this.toggleExtension.classList.remove('active');
-    }
+    // Update toggle states
+    this.toggleTranslations.classList.toggle('active', this.showTranslations);
+    this.toggleExtension.classList.toggle('active', this.isActive);
+    this.togglePauseOnHover.classList.toggle('active', this.pauseOnHover);
   }
 
   async checkConnectionStatus() {
@@ -153,7 +176,7 @@ class PopupUI {
     // Language selector
     this.targetLangSelect.addEventListener('change', async (e) => {
       this.targetLang = e.target.value;
-      await chrome.storage.local.set({ targetLang: this.targetLang });
+      await storageManager.set({ targetLang: this.targetLang });
       this.updateWordsList();
     });
     
@@ -168,8 +191,8 @@ class PopupUI {
         this.toggleExtension.classList.remove('active');
       }
       
-      await chrome.storage.local.set({ isActive: this.isActive });
-      await this.sendMessageToContentScript({ action: 'toggle', enabled: this.isActive });
+      await storageManager.set({ isActive: this.isActive });
+      await broadcastToAllTabs(MESSAGE_TYPES.TOGGLE, { isActive: this.isActive });
       await this.checkConnectionStatus();
     });
     
@@ -184,21 +207,41 @@ class PopupUI {
         this.toggleTranslations.classList.remove('active');
       }
       
-      await chrome.storage.local.set({ showTranslations: this.showTranslations });
+      await storageManager.set({ showTranslations: this.showTranslations });
       this.updateWordsList();
+    });
+    
+    // Toggle Pause on Hover
+    this.togglePauseOnHover.addEventListener('click', async () => {
+      this.pauseOnHover = !this.pauseOnHover;
+      this.pauseOnHoverCheckbox.checked = this.pauseOnHover;
+      this.togglePauseOnHover.classList.toggle('active', this.pauseOnHover);
+      
+      await storageManager.set({ pauseOnHover: this.pauseOnHover });
+      await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
+        pauseOnHover: this.pauseOnHover
+      });
+      
+      console.log('⏸ Pause on hover:', this.pauseOnHover);
     });
     
     // Color pickers
     this.knownColorInput.addEventListener('change', async (e) => {
-      const color = e.target.value;
-      await chrome.storage.local.set({ knownColor: color });
-      await this.sendMessageToContentScript({ action: 'updateColors' });
+      this.knownColor = e.target.value;
+      await storageManager.set({ knownColor: this.knownColor });
+      await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
+        knownColor: this.knownColor,
+        learningColor: this.learningColor
+      });
     });
     
     this.learningColorInput.addEventListener('change', async (e) => {
-      const color = e.target.value;
-      await chrome.storage.local.set({ learningColor: color });
-      await this.sendMessageToContentScript({ action: 'updateColors' });
+      this.learningColor = e.target.value;
+      await storageManager.set({ learningColor: this.learningColor });
+      await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
+        knownColor: this.knownColor,
+        learningColor: this.learningColor
+      });
     });
     
     // Action Buttons
@@ -347,21 +390,45 @@ class PopupUI {
   }
 
   async toggleWordStatus(word) {
-    if (this.knownWords.has(word)) {
-      // Known -> Learning
-      this.knownWords.delete(word);
-      this.unknownWords.add(word);
-    } else if (this.unknownWords.has(word)) {
-      // Learning -> Remove
-      this.unknownWords.delete(word);
+    // Use unified 3-state cycle
+    const currentState = getWordState(word, this.knownWords, this.unknownWords);
+    const nextState = getNextWordState(currentState);
+    
+    console.log(`🔄 Toggle: ${word} (${currentState} → ${nextState})`);
+    
+    // Update using storage manager (atomic operations!)
+    switch (nextState) {
+      case WORD_STATES.KNOWN:
+        // Move to known
+        await storageManager.removeFromSet('unknownWords', word);
+        await storageManager.addToSet('knownWords', word);
+        this.knownWords.add(word);
+        this.unknownWords.delete(word);
+        break;
+        
+      case WORD_STATES.LEARNING:
+        // Move to learning
+        await storageManager.removeFromSet('knownWords', word);
+        await storageManager.addToSet('unknownWords', word);
+        this.unknownWords.add(word);
+        this.knownWords.delete(word);
+        break;
+        
+      case WORD_STATES.UNMARKED:
+        // Remove from both
+        await storageManager.removeFromSet('knownWords', word);
+        await storageManager.removeFromSet('unknownWords', word);
+        this.knownWords.delete(word);
+        this.unknownWords.delete(word);
+        break;
     }
     
-    await chrome.storage.local.set({
+    // Notify content script using new protocol
+    await broadcastToAllTabs(MESSAGE_TYPES.WORDS_UPDATED, {
       knownWords: Array.from(this.knownWords),
       unknownWords: Array.from(this.unknownWords)
     });
     
-    await this.sendMessageToContentScript({ action: 'refresh' });
     this.updateUI();
   }
 
@@ -435,12 +502,12 @@ class PopupUI {
         this.translations = new Map([...this.translations, ...Object.entries(data.translations)]);
       }
       
-      await chrome.storage.local.set({
+      await storageManager.set({
         knownWords: Array.from(this.knownWords),
         unknownWords: Array.from(this.unknownWords)
       });
       
-      await this.sendMessageToContentScript({ action: 'refresh' });
+      await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
       this.updateUI();
       
       alert('Kelimeler başarıyla içe aktarıldı!');
@@ -460,12 +527,12 @@ class PopupUI {
     this.unknownWords.clear();
     this.translations.clear();
     
-    await chrome.storage.local.set({
+    await storageManager.set({
       knownWords: [],
       unknownWords: []
     });
     
-    await this.sendMessageToContentScript({ action: 'refresh' });
+    await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
     this.updateUI();
   }
 

@@ -139,11 +139,9 @@ class SubtitleColorer {
         const textLengthDiff = Math.abs(currentText.length - this.lastCaptionText.length);
         
         if (isCompleteReset) {
-          console.log('🔄 Caption reset detected, clearing processed elements');
           this.processedElements.clear();
           this.debounceProcessSubtitles(20);
         } else if (textLengthDiff > 5) { // Only process if significant change
-          console.log(`📝 Significant caption change detected (${textLengthDiff} chars)`);
           this.processIncrementalChanges(captionContainer);
         }
         
@@ -231,7 +229,6 @@ class SubtitleColorer {
     });
     
     if (newElements.length > 0) {
-      console.log(`⚡ Processing ${newElements.length} new elements incrementally`);
       newElements.forEach(element => {
         this.processElement(element);
         this.processedElements.add(element);
@@ -773,12 +770,10 @@ class SubtitleColorer {
   }
 
   forceProcessSubtitles() {
-    console.log('🔄 Force processing subtitles...');
     this.processSubtitles();
   }
 
   clearProcessedElements() {
-    console.log('🧹 Clearing processed elements...');
     this.processedElements.clear();
     this.processSubtitles();
   }
@@ -807,19 +802,15 @@ if (document.readyState === 'loading') {
   initializeExtension();
 }
 
-async function initializeExtension() {
-  console.log('� SubFlow: Starting initialization...');
-  
+async function initializeExtension() {  
   // Wait for YouTube to load
   const waitForYouTube = () => {
     return new Promise((resolve) => {
       const check = () => {
         const player = document.querySelector('#movie_player, .html5-video-player');
         if (player) {
-          console.log('🎬 YouTube player found:', player);
           resolve();
         } else {
-          console.log('🎬 Waiting for YouTube player...');
           setTimeout(check, 500);
         }
       };
@@ -838,7 +829,6 @@ async function initializeExtension() {
     return true; // Keep the message channel open for async responses
   });
   
-  console.log('� SubFlow initialized successfully!');
 
 }
 

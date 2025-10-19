@@ -27,13 +27,18 @@
         }
 
         body {
-            width: 400px;
-            height: 560px;
+            min-width: 360px;
+            max-width: 420px;
+            width: 100%;
+            min-height: 500px;
+            max-height: 600px;
+            height: auto;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             font-size: 13px;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         /* Main Tabs */
@@ -68,8 +73,10 @@
         /* Tab Panels */
         .tab-panel {
             display: none;
-            height: calc(560px - 45px);
-            overflow: hidden;
+            min-height: 450px;
+            max-height: calc(100vh - 45px);
+            overflow-x: hidden;
+            overflow-y: auto;
             flex-direction: column;
         }
 
@@ -222,24 +229,33 @@
         .word-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
-            margin-bottom: 4px;
+            gap: 12px;
+            padding: 12px 14px;
+            margin-bottom: 6px;
             background: var(--surface);
             border-radius: var(--radius);
             cursor: pointer;
             transition: all 0.2s;
+            min-height: 52px;
         }
 
         .word-item:hover {
-            background: #e2e8f0;
+            background: rgba(0, 0, 0, 0.03);
+            transform: none;
+        }
+
+        .word-item:active {
+            transform: scale(0.98);
         }
 
         .word-dot {
-            width: 6px;
-            height: 6px;
+            width: 10px;
+            height: 10px;
+            min-width: 10px;
+            min-height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .word-dot.known {
@@ -253,18 +269,26 @@
         .word-info {
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .word-text {
-            font-weight: 500;
-            font-size: 12px;
+            font-weight: 600;
+            font-size: 14px;
             color: var(--text);
-            margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .word-translation {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .word-translation.loading {
@@ -383,20 +407,21 @@
 
         .setting-btn {
             width: 100%;
-            padding: 10px;
+            min-height: 44px;
+            padding: 12px 16px;
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text);
             border-radius: var(--radius);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .setting-btn:hover {
@@ -422,22 +447,29 @@
             background: #fef2f2;
         }
 
-        /* Scrollbar */
+        /* Scrollbar - Better visibility and usability */
         ::-webkit-scrollbar {
-            width: 4px;
+            width: 8px;
+            height: 8px;
         }
 
         ::-webkit-scrollbar-track {
-            background: transparent;
+            background: var(--surface);
+            border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--border);
-            border-radius: 2px;
+            border-radius: 4px;
+            border: 2px solid var(--surface);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
+            background: var(--text-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+            background: var(--text);
         }
 
         .hidden {
@@ -537,6 +569,15 @@
                         <input type="checkbox" id="showTranslationsCheckbox" checked hidden>
                     </div>
                 </div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>⏸</span>
+                        <span>Kelimelere Hover'da Durdur</span>
+                    </div>
+                    <div class="toggle-switch active" id="togglePauseOnHover">
+                        <input type="checkbox" id="pauseOnHoverCheckbox" checked hidden>
+                    </div>
+                </div>
             </div>
 
             <!-- Color Settings -->
@@ -591,7 +632,15 @@
 
     <input type="file" id="fileInput" accept=".json" />
     
+    <!-- Core modules (load first) -->
+    <script src="storage-manager.js"></script>
+    <script src="shared-config.js"></script>
+    <script src="message-protocol.js"></script>
+    
+    <!-- Services -->
     <script src="translation-service.js"></script>
+    
+    <!-- Popup logic -->
     <script src="popup.js"></script>
 </body>
 </html>

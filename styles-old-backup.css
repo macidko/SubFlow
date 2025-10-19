@@ -1,12 +1,23 @@
-/* ⚠️ DEPRECATED - DO NOT USE THIS FILE
- * 
- * All subtitle styles are now in: perfect-mimic-styles.css
- * This file is kept only for backward compatibility
- * 
- * If you see this file being loaded in manifest.json, please remove it.
- * Only perfect-mimic-styles.css should be used.
- */
+/* YouTube Subtitle Colorer - Modern Anti-Glitch Optimized */
 
+/* Modern Color Variables */
+:root {
+  --known-color: #10b981;
+  --known-bg: rgba(16, 185, 129, 0.1);
+  --known-border: rgba(16, 185, 129, 0.3);
+  --known-glow: rgba(16, 185, 129, 0.2);
+  
+  --learning-color: #f59e0b;
+  --learning-bg: rgba(245, 158, 11, 0.1);
+  --learning-border: rgba(245, 158, 11, 0.3);
+  --learning-glow: rgba(245, 158, 11, 0.2);
+  
+  --ctrl-bg: rgba(99, 102, 241, 0.08);
+  --ctrl-border: rgba(99, 102, 241, 0.3);
+  
+  --menu-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+  --menu-shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
 
 /* Core word styling - ZERO layout impact */
 .subtitle-word {

@@ -8,6 +8,7 @@ class TranslationService {
     this.apiEndpoint = 'https://translate.googleapis.com/translate_a/single';
     this.requestDelay = 300; // ms between requests
     this.lastRequestTime = 0;
+    this.storageManager = window.storageManager; // Use centralized storage
   }
 
   static async create() {
@@ -18,17 +19,15 @@ class TranslationService {
 
   async loadCache() {
     try {
-      const data = await chrome.storage.local.get({
-        translationCache: {},
-        cacheTimestamps: {}
-      });
+      // Use storage manager instead of direct chrome.storage
+      const data = await this.storageManager.get(['translationCache', 'cacheTimestamps']);
       
       const now = Date.now();
       const validCache = {};
       
       // Load and validate cache entries
-      for (const [key, value] of Object.entries(data.translationCache)) {
-        const timestamp = data.cacheTimestamps[key];
+      for (const [key, value] of Object.entries(data.translationCache || {})) {
+        const timestamp = data.cacheTimestamps?.[key];
         if (timestamp && (now - timestamp) < this.cacheExpiry) {
           validCache[key] = value;
           this.cache.set(key, {
@@ -38,9 +37,9 @@ class TranslationService {
         }
       }
       
-      console.log(`Loaded ${this.cache.size} cached translations`);
+      console.log(`✅ [TranslationService] Loaded ${this.cache.size} cached translations`);
     } catch (error) {
-      console.error('Failed to load translation cache:', error);
+      console.error('❌ [TranslationService] Failed to load cache:', error);
     }
   }
 
@@ -59,12 +58,15 @@ class TranslationService {
         timestampObj[key] = data.timestamp;
       }
       
-      await chrome.storage.local.set({
+      // Use storage manager for atomic save
+      await this.storageManager.set({
         translationCache: cacheObj,
         cacheTimestamps: timestampObj
       });
+      
+      console.log(`💾 [TranslationService] Saved ${this.cache.size} translations to cache`);
     } catch (error) {
-      console.error('Failed to save translation cache:', error);
+      console.error('❌ [TranslationService] Failed to save cache:', error);
     }
   }
 
@@ -229,7 +231,12 @@ class TranslationService {
 
   async clearCache() {
     this.cache.clear();
-    await chrome.storage.local.remove(['translationCache', 'cacheTimestamps']);
+    // Use storage manager for atomic clear
+    await this.storageManager.set({
+      translationCache: {},
+      cacheTimestamps: {}
+    });
+    console.log('🗑️ [TranslationService] Cache cleared');
   }
 
   getCacheStats() {
