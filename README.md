@@ -58,6 +58,48 @@ Modern, minimal ve flat design ile tasarlanmış Chrome eklentisi. YouTube altya
 - 📥 **İçe Aktar** - Daha önce kaydedilmiş kelimeleri yükle
 - 🗑 **Temizle** - Tüm kelimeleri sil
 
+## 🏗️ Proje Yapısı
+
+```
+Subtitle Colorer/
+├── manifest.json              # Chrome extension manifest
+├── perfect-mimic.js           # Ana entry point - modülleri yükler
+├── popup.html                 # Popup arayüzü
+├── js/                        # JavaScript modülleri
+│   ├── config/
+│   │   └── shared-config.js   # Konfigürasyon ve sabitler
+│   ├── messaging/
+│   │   └── message-protocol.js # Popup ↔ Content script iletişimi
+│   ├── storage/
+│   │   └── storage-manager.js  # Queue-based storage sistemi
+│   ├── services/
+│   │   └── translation-service.js # Google Translate API servisi
+│   ├── popup/
+│   │   └── popup.js           # Popup UI ve mantığı
+│   ├── background/
+│   │   └── background.js      # Background service worker
+│   ├── content/
+│   │   └── content.js         # Eski content script (arşiv)
+│   ├── utils.js               # Yardımcı fonksiyonlar
+│   ├── subtitle-system.js     # Ana altyazı sistemi
+│   ├── word-manager.js        # Kelime yönetimi
+│   └── menu-system.js         # Popup menü sistemi
+├── styles/                    # CSS modülleri
+│   ├── base.css               # Temel reset ve yardımcı stiller
+│   ├── subtitle-core.css      # Altyazı konteyneri stilleri
+│   ├── subtitle-words.css     # Kelime renklendirme stilleri
+│   ├── popup-menu.css         # Popup menü tasarımı
+│   ├── responsive.css         # Responsive breakpoint'ler
+│   ├── perfect-mimic-styles.css # Eski CSS (arşiv)
+│   └── styles.css             # Eski CSS (arşiv)
+└── assets/                    # İkonlar ve görseller
+    ├── icon16.png
+    ├── icon48.png
+    ├── icon128.png
+    ├── logo.png
+    └── logo.svg
+```
+
 ## 📦 Kurulum
 
 ### Chrome Web Store (Yakında)

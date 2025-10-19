@@ -1,0 +1,12 @@
+/* Base Styles - Core resets and utilities */
+
+/* Hide native YouTube subtitles */
+.ytp-caption-window-container {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Remove line transitions that cause layout shift */
+.mimic-line {
+  transition: none !important;
+}

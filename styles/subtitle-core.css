@@ -1,0 +1,41 @@
+/* Subtitle Core - Main container and line styling */
+
+/* Mimic container - CENTERED FRAME, LEFT-ALIGNED CONTENT */
+.mimic-subtitle-container {
+  font-family: 'Roboto', 'YouTube Noto', sans-serif !important;
+  line-height: 1.4 !important;
+  color: white !important;
+  text-shadow:
+    1px 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 4px rgba(0, 0, 0, 0.7) !important;
+  position: absolute !important;
+  bottom: 12% !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  max-width: 90% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important; /* LEFT ALIGN LINES */
+  justify-content: center !important;
+  gap: 4px !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+/* Mimic line styling - LEFT ALIGNED WORDS, NO CENTERING */
+.mimic-line {
+  text-align: left !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  display: block !important;
+  width: auto !important; /* FIT CONTENT */
+  max-width: none !important; /* NO MAX WIDTH LIMIT */
+  margin: 0 !important; /* NO AUTO CENTERING */
+  padding: 6px 12px !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  pointer-events: auto !important;
+}

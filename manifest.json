@@ -14,30 +14,40 @@
     {
       "matches": ["*://*.youtube.com/*"],
       "js": [
-        "storage-manager.js",
-        "shared-config.js",
-        "message-protocol.js",
+        "js/storage/storage-manager.js",
+        "js/config/shared-config.js",
+        "js/messaging/message-protocol.js",
+        "js/utils.js",
+        "js/subtitle-system.js",
+        "js/word-manager.js",
+        "js/menu-system.js",
         "perfect-mimic.js"
       ],
-      "css": ["perfect-mimic-styles.css"],
+      "css": [
+        "styles/base.css",
+        "styles/subtitle-core.css",
+        "styles/subtitle-words.css",
+        "styles/popup-menu.css",
+        "styles/responsive.css"
+      ],
       "run_at": "document_end"
     }
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "js/background/background.js"
   },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Subtitle Colorer",
     "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
     }
   },
   "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
   }
 }

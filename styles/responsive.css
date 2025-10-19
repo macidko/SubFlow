@@ -1,0 +1,175 @@
+/* Responsive Design - All breakpoints and mobile optimizations */
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Mobile devices */
+@media (max-width: 767px) {
+  .mimic-subtitle-container {
+    bottom: 10% !important;
+    max-width: 95% !important;
+  }
+
+  .mimic-line {
+    padding: 4px 8px !important;
+  }
+}
+
+/* Desktop and larger screens */
+@media (min-width: 1200px) {
+  .mimic-subtitle-container {
+    bottom: 14% !important;
+  }
+
+  .mimic-line {
+    padding: 8px 16px !important;
+  }
+}
+
+/* ===== RESPONSIVE MENU FOR MOBILE ===== */
+@media (max-width: 575px) {
+  .subtitle-word-menu {
+    min-width: 180px;
+    max-width: 90vw;
+    border-radius: 10px;
+  }
+
+  .subtitle-word-menu > div:first-child {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .subtitle-word-menu button {
+    min-height: 52px;
+    padding: 16px 14px;
+    font-size: 13px;
+  }
+
+  .button-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 576px) and (max-width: 991px) {
+  .subtitle-word-menu {
+    min-width: 220px;
+  }
+
+  .subtitle-word-menu button {
+    min-height: 50px;
+  }
+}
+
+/* ===== FULL RESPONSIVE COVERAGE ===== */
+
+/* Extra small devices (phones, less than 576px) */
+@media (max-width: 575px) {
+  .mimic-subtitle-container {
+    font-size: clamp(14px, 3.5vw, 18px) !important;
+  }
+
+  .mimic-line {
+    max-width: 90% !important;
+  }
+}
+
+/* Small devices (phones landscape, 576px and up) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .mimic-subtitle-container {
+    font-size: clamp(16px, 3.2vw, 20px) !important;
+  }
+
+  .mimic-line {
+    max-width: 88% !important;
+  }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .mimic-subtitle-container {
+    font-size: clamp(18px, 2.8vw, 24px) !important;
+  }
+
+  .mimic-line {
+    max-width: 85% !important;
+  }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .mimic-subtitle-container {
+    font-size: clamp(20px, 2.4vw, 28px) !important;
+  }
+
+  .mimic-line {
+    max-width: 82% !important;
+  }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .mimic-subtitle-container {
+    font-size: clamp(24px, 2vw, 32px) !important;
+  }
+
+  .mimic-line {
+    max-width: 80% !important;
+  }
+}
+
+/* XXL devices (ultra-wide monitors, 1600px and up) */
+@media (min-width: 1600px) {
+  .mimic-subtitle-container {
+    font-size: clamp(28px, 1.8vw, 36px) !important;
+  }
+
+  .mimic-line {
+    max-width: 75% !important;
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Accessibility - High Contrast Mode */
+@media (prefers-contrast: high) {
+  .subtitle-word-menu {
+    background: #ffffff;
+    border: 2px solid #000000;
+    color: #000000;
+  }
+
+  .subtitle-word-menu > div:first-child {
+    background: #f0f0f0;
+    color: #000000;
+    border-bottom: 2px solid #000000;
+  }
+
+  .subtitle-word-menu button {
+    color: #000000;
+    border-bottom: 1px solid #cccccc;
+  }
+
+  .subtitle-word-menu button:hover {
+    background: #e0e0e0;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .subtitle-word-menu {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .subtitle-word-menu button {
+    transition: none;
+  }
+
+  .subtitle-word-menu button:hover {
+    transform: none;
+  }
+}

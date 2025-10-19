@@ -1,4 +1,4 @@
-/* Perfect Mimic Subtitle System - Responsive & Zero Layout Shift */
+/* Perfect Mimic Subtitle System - Zero Layout Shift, Left-Aligned Words */
 
 /* Hide native YouTube subtitles */
 .ytp-caption-window-container {
@@ -6,26 +6,45 @@
   pointer-events: none !important;
 }
 
-/* Mimic container - responsive positioning */
+/* Mimic container - CENTERED FRAME, LEFT-ALIGNED CONTENT */
 .mimic-subtitle-container {
   font-family: 'Roboto', 'YouTube Noto', sans-serif !important;
   line-height: 1.4 !important;
   color: white !important;
-  text-shadow: 
+  text-shadow:
     1px 1px 2px rgba(0, 0, 0, 0.9),
     0 0 4px rgba(0, 0, 0, 0.7) !important;
+  position: absolute !important;
+  bottom: 12% !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  max-width: 90% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important; /* LEFT ALIGN LINES */
+  justify-content: center !important;
+  gap: 4px !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
 }
 
-/* Mimic line styling - NO LAYOUT SHIFT, LEFT ALIGNED */
+/* Mimic line styling - LEFT ALIGNED WORDS, NO CENTERING */
 .mimic-line {
   text-align: left !important;
   white-space: pre-wrap !important;
   word-wrap: break-word !important;
   word-break: break-word !important;
   display: block !important;
-  width: auto !important;
-  max-width: 85% !important;
-  margin: 0 auto !important;
+  width: auto !important; /* FIT CONTENT */
+  max-width: none !important; /* NO MAX WIDTH LIMIT */
+  margin: 0 !important; /* NO AUTO CENTERING */
+  padding: 6px 12px !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  pointer-events: auto !important;
+  transition: none !important;
 }
 
 /* Word styling - ZERO PADDING to prevent layout shift */
@@ -58,13 +77,13 @@
   color: #10b981 !important;
   font-weight: 700 !important;
   text-decoration: none !important;
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+  text-shadow: none !important; /* REMOVED GLOW */
 }
 
 .known-word:hover {
   color: #34d399 !important;
-  background: none !important;
-  text-shadow: none !important;
+  background: none !important; /* REMOVED BACKGROUND */
+  text-shadow: none !important; /* REMOVED GLOW */
 }
 
 /* Unknown words - Color only (NO padding/background) - BOLD for visibility */
@@ -72,13 +91,13 @@
   color: #f59e0b !important;
   font-weight: 700 !important;
   text-decoration: none !important;
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.6) !important;
+  text-shadow: none !important; /* REMOVED GLOW */
 }
 
 .unknown-word:hover {
   color: #fbbf24 !important;
-  background: none !important;
-  text-shadow: none !important;
+  background: none !important; /* REMOVED BACKGROUND */
+  text-shadow: none !important; /* REMOVED GLOW */
 }
 
 /* Click feedback - subtle */
@@ -86,77 +105,33 @@
   opacity: 0.7 !important;
 }
 
-/* Smooth line transitions */
+/* Remove line transitions that cause layout shift */
 .mimic-line {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: none !important;
 }
 
-/* ===== RESPONSIVE DESIGN - Full Coverage ===== */
+/* ===== RESPONSIVE DESIGN ===== */
 
-/* Extra small devices (phones, less than 576px) */
-@media (max-width: 575px) {
+/* Mobile devices */
+@media (max-width: 767px) {
   .mimic-subtitle-container {
-    font-size: clamp(14px, 3.5vw, 18px) !important;
+    bottom: 10% !important;
+    max-width: 95% !important;
   }
-  
-  .mimic-line {
-    max-width: 90% !important;
-  }
-}
 
-/* Small devices (phones landscape, 576px and up) */
-@media (min-width: 576px) and (max-width: 767px) {
-  .mimic-subtitle-container {
-    font-size: clamp(16px, 3.2vw, 20px) !important;
-  }
-  
   .mimic-line {
-    max-width: 88% !important;
+    padding: 4px 8px !important;
   }
 }
 
-/* Medium devices (tablets, 768px and up) */
-@media (min-width: 768px) and (max-width: 991px) {
+/* Desktop and larger screens */
+@media (min-width: 1200px) {
   .mimic-subtitle-container {
-    font-size: clamp(18px, 2.8vw, 24px) !important;
+    bottom: 14% !important;
   }
-  
-  .mimic-line {
-    max-width: 85% !important;
-  }
-}
 
-/* Large devices (desktops, 992px and up) */
-@media (min-width: 992px) and (max-width: 1199px) {
-  .mimic-subtitle-container {
-    font-size: clamp(20px, 2.4vw, 28px) !important;
-  }
-  
   .mimic-line {
-    max-width: 82% !important;
-  }
-}
-
-/* Extra large devices (large desktops, 1200px and up) */
-@media (min-width: 1200px) and (max-width: 1599px) {
-  .mimic-subtitle-container {
-    font-size: clamp(24px, 2vw, 32px) !important;
-  }
-  
-  .mimic-line {
-    max-width: 80% !important;
-  }
-}
-
-/* XXL devices (ultra-wide monitors, 1600px and up) */
-@media (min-width: 1600px) {
-  .mimic-subtitle-container {
-    font-size: clamp(28px, 1.8vw, 36px) !important;
-  }
-  
-  .mimic-line {
-    max-width: 75% !important;
+    padding: 8px 16px !important;
   }
 }
 
@@ -169,7 +144,7 @@
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 10001;
@@ -314,18 +289,18 @@
     max-width: 90vw;
     border-radius: 10px;
   }
-  
+
   .subtitle-word-menu > div:first-child {
     padding: 12px 14px;
     font-size: 13px;
   }
-  
+
   .subtitle-word-menu button {
     min-height: 52px;
     padding: 16px 14px;
     font-size: 13px;
   }
-  
+
   .button-icon {
     width: 28px;
     height: 28px;
@@ -339,7 +314,7 @@
   .subtitle-word-menu {
     min-width: 220px;
   }
-  
+
   .subtitle-word-menu button {
     min-height: 50px;
   }
@@ -352,18 +327,18 @@
     border: 2px solid #000000;
     color: #000000;
   }
-  
+
   .subtitle-word-menu > div:first-child {
     background: #f0f0f0;
     color: #000000;
     border-bottom: 2px solid #000000;
   }
-  
+
   .subtitle-word-menu button {
     color: #000000;
     border-bottom: 1px solid #cccccc;
   }
-  
+
   .subtitle-word-menu button:hover {
     background: #e0e0e0;
   }
@@ -376,12 +351,78 @@
     opacity: 1;
     transform: none;
   }
-  
+
   .subtitle-word-menu button {
     transition: none;
   }
-  
+
   .subtitle-word-menu button:hover {
     transform: none;
+  }
+}/* ===== RESPONSIVE DESIGN - Full Coverage ===== */
+
+/* Extra small devices (phones, less than 576px) */
+@media (max-width: 575px) {
+  .mimic-subtitle-container {
+    font-size: clamp(14px, 3.5vw, 18px) !important;
+  }
+  
+  .mimic-line {
+    max-width: 90% !important;
+  }
+}
+
+/* Small devices (phones landscape, 576px and up) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .mimic-subtitle-container {
+    font-size: clamp(16px, 3.2vw, 20px) !important;
+  }
+  
+  .mimic-line {
+    max-width: 88% !important;
+  }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .mimic-subtitle-container {
+    font-size: clamp(18px, 2.8vw, 24px) !important;
+  }
+  
+  .mimic-line {
+    max-width: 85% !important;
+  }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .mimic-subtitle-container {
+    font-size: clamp(20px, 2.4vw, 28px) !important;
+  }
+  
+  .mimic-line {
+    max-width: 82% !important;
+  }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .mimic-subtitle-container {
+    font-size: clamp(24px, 2vw, 32px) !important;
+  }
+  
+  .mimic-line {
+    max-width: 80% !important;
+  }
+}
+
+/* XXL devices (ultra-wide monitors, 1600px and up) */
+@media (min-width: 1600px) {
+  .mimic-subtitle-container {
+    font-size: clamp(28px, 1.8vw, 36px) !important;
+  }
+  
+  .mimic-line {
+    max-width: 75% !important;
   }
 }
