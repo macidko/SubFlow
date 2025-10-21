@@ -24,27 +24,27 @@ window.WordManager = class WordManager {
     // Update state using storage manager (prevents race conditions!)
     switch (nextState) {
       case window.WORD_STATES.KNOWN:
-        // Move to known
-        await this.system.storage.removeFromSet('unknownWords', word);
-        await this.system.storage.addToSet('knownWords', word);
+        // Move to known (delegate writes to background)
+        await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
+        await window.delegateStorageOp('addToSet', { key: 'knownWords', item: word });
         this.system.knownWords.add(word);
         this.system.unknownWords.delete(word);
         wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.KNOWN]}`;
         break;
 
       case window.WORD_STATES.LEARNING:
-        // Move to learning
-        await this.system.storage.removeFromSet('knownWords', word);
-        await this.system.storage.addToSet('unknownWords', word);
+        // Move to learning (delegate writes to background)
+        await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
+        await window.delegateStorageOp('addToSet', { key: 'unknownWords', item: word });
         this.system.unknownWords.add(word);
         this.system.knownWords.delete(word);
         wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.LEARNING]}`;
         break;
 
       case window.WORD_STATES.UNMARKED:
-        // Remove from both
-        await this.system.storage.removeFromSet('knownWords', word);
-        await this.system.storage.removeFromSet('unknownWords', word);
+        // Remove from both (delegate writes to background)
+        await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
+        await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
         this.system.knownWords.delete(word);
         this.system.unknownWords.delete(word);
         wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.UNMARKED]}`;
@@ -60,8 +60,8 @@ window.WordManager = class WordManager {
     console.debug('[Action] markAsKnown invoked for', word);
 
     try {
-      // ATOMIC OPERATION - Use moveToSet to prevent race conditions
-      await this.system.storage.moveToSet('unknownWords', 'knownWords', word);
+  // ATOMIC OPERATION - delegate to background for atomic move
+  await window.delegateStorageOp('moveToSet', { fromKey: 'unknownWords', toKey: 'knownWords', item: word });
 
       // Update local sets
       this.system.knownWords.add(word);
@@ -74,6 +74,33 @@ window.WordManager = class WordManager {
     } catch (err) {
       console.error('❌ [ERROR] markAsKnown failed for', word, ':', err);
       console.error('Error stack:', err.stack);
+
+      // If the storage write failed due to context invalidation (service worker or
+      // content script getting torn down), try delegating the operation to the
+      // background service worker which has a more stable lifetime.
+      if (err && err.message && err.message.includes('Extension context invalidated')) {
+        try {
+          chrome.runtime.sendMessage({
+            type: 'storageMove',
+            fromKey: 'unknownWords',
+            toKey: 'knownWords',
+            item: word
+          });
+
+          // Update local sets and UI immediately (background will perform storage)
+          this.system.knownWords.add(word);
+          this.system.unknownWords.delete(word);
+          this.updateAllWordInstances(word);
+
+          console.log('ℹ️ Delegated moveToSet to background for', word);
+          return;
+        } catch (sendErr) {
+          console.error('❌ Failed delegating to background:', sendErr);
+          try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('İşlem arka plana devredilemedi'); } catch(e) {}
+        }
+      }
+
+      window.toast.error(`ERROR: ${err.message}`);
     }
   }
 
@@ -81,8 +108,8 @@ window.WordManager = class WordManager {
     console.debug('[Action] markAsUnknown invoked for', word);
 
     try {
-      // ATOMIC OPERATION - Use moveToSet to prevent race conditions
-      await this.system.storage.moveToSet('knownWords', 'unknownWords', word);
+  // ATOMIC OPERATION - delegate to background for atomic move
+  await window.delegateStorageOp('moveToSet', { fromKey: 'knownWords', toKey: 'unknownWords', item: word });
 
       // Update local sets
       this.system.unknownWords.add(word);
@@ -95,7 +122,28 @@ window.WordManager = class WordManager {
     } catch (err) {
       console.error('❌ [ERROR] markAsUnknown failed for', word, ':', err);
       console.error('Error stack:', err.stack);
-      alert(`ERROR: ${err.message}`); // ALERT for visibility
+
+      if (err && err.message && err.message.includes('Extension context invalidated')) {
+        try {
+          chrome.runtime.sendMessage({
+            type: 'storageMove',
+            fromKey: 'knownWords',
+            toKey: 'unknownWords',
+            item: word
+          });
+
+          this.system.unknownWords.add(word);
+          this.system.knownWords.delete(word);
+          this.updateAllWordInstances(word);
+
+          console.log('ℹ️ Delegated moveToSet to background for', word);
+          return;
+        } catch (sendErr) {
+          console.error('❌ Failed delegating to background:', sendErr);
+        }
+      }
+
+      window.toast.error(`ERROR: ${err.message}`);
     }
   }
 
@@ -103,14 +151,11 @@ window.WordManager = class WordManager {
     console.debug('[Action] removeFromList invoked for', word);
 
     try {
-      // Remove from both lists atomically in one operation
+      // Remove from both lists atomically via background set
       const knownArray = Array.from(this.system.knownWords).filter(w => w !== word);
       const unknownArray = Array.from(this.system.unknownWords).filter(w => w !== word);
 
-      await this.system.storage.set({
-        knownWords: knownArray,
-        unknownWords: unknownArray
-      });
+      await window.delegateStorageOp('set', { knownWords: knownArray, unknownWords: unknownArray });
 
       // Update local sets
       this.system.knownWords.delete(word);
@@ -121,7 +166,8 @@ window.WordManager = class WordManager {
 
       console.log('🗑️ Removed from lists:', word);
     } catch (err) {
-      console.error('❌ [ERROR] removeFromList failed for', word, ':', err);
+  console.error('❌ [ERROR] removeFromList failed for', word, ':', err);
+  try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Kelime listeden silinemedi'); } catch(e) {}
     }
   }
 

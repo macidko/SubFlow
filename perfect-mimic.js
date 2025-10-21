@@ -24,6 +24,11 @@ async function initPerfectMimic() {
     if (window.location.hostname === 'www.youtube.com' && document.querySelector('#movie_player')) {
       console.log('🎬 YouTube detected, initializing Perfect Mimic...');
 
+      // If an existing instance exists, destroy it to avoid leaks
+      if (window.perfectMimic && typeof window.perfectMimic.destroy === 'function') {
+        try { window.perfectMimic.destroy(); } catch (e) { console.warn('Error destroying previous PerfectMimic', e); }
+      }
+
       window.perfectMimic = new window.PerfectMimicSubtitleSystem();
 
       // Extend with managers
@@ -36,15 +41,31 @@ async function initPerfectMimic() {
         const wordSpans = mimicLine.querySelectorAll('.mimic-word');
 
         wordSpans.forEach(span => {
-          span.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.debug('🖱️ mimic-word clicked (span.dataset.word):', span.dataset.word, span);
-            this.menuSystem.showWordMenu(span, e);
-          });
+          // Attach back-reference to instance so handlers can resolve the correct system
+          try { span.__perfectMimicInstance = this; } catch (e) { /* ignore */ }
 
-          if (this.pauseOnHover) {
-            span.addEventListener('mouseenter', () => this.pauseVideo());
-            span.addEventListener('mouseleave', () => this.resumeVideo());
+          // Prefer the tracked listener helper when available
+          if (typeof this._addTrackedListener === 'function') {
+            this._addTrackedListener(span, 'click', function (e) {
+              e.stopPropagation();
+              console.debug('🖱️ mimic-word clicked (span.dataset.word):', this.dataset.word, this);
+              (this.__perfectMimicInstance || window.perfectMimic)?.menuSystem?.showWordMenu(this, e);
+            }.bind(span));
+
+            if (this.pauseOnHover) {
+              this._addTrackedListener(span, 'mouseenter', () => this.pauseVideo());
+              this._addTrackedListener(span, 'mouseleave', () => this.resumeVideo());
+            }
+          } else {
+            span.addEventListener('click', (e) => {
+              e.stopPropagation();
+              this.menuSystem.showWordMenu(span, e);
+            });
+
+            if (this.pauseOnHover) {
+              span.addEventListener('mouseenter', () => this.pauseVideo());
+              span.addEventListener('mouseleave', () => this.resumeVideo());
+            }
           }
         });
       };

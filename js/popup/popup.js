@@ -4,7 +4,6 @@
 // Import shared modules
 const { STORAGE_SCHEMA, WORD_STATES, WORD_CLASSES, getNextWordState, getWordState } = window;
 const { MESSAGE_TYPES, createMessage, sendToContentScript, broadcastToAllTabs } = window;
-const storageManager = window.storageManager;
 
 class PopupUI {
   constructor() {
@@ -71,14 +70,11 @@ class PopupUI {
       this.translationManager = new window.TranslationManager(this);
       this.exportImportManager = new window.ExportImportManager(this);
 
-      // Initialize storage manager
-      await storageManager.initialize(STORAGE_SCHEMA);
-      
-      // Initialize translation service
-      this.translationService = await TranslationService.create();
-      
-      // Load all settings
-      await this.dataManager.loadStoredData();
+  // Initialize translation service
+  this.translationService = await TranslationService.create();
+
+  // Load all settings (reads are delegated to background via delegateStorageOp)
+  await this.dataManager.loadStoredData();
       
       // Check connection
       await this.uiManager.checkConnectionStatus();
@@ -90,6 +86,7 @@ class PopupUI {
       console.log('✅ Popup v2.0 initialized');
     } catch (error) {
       console.error('❌ Init error:', error);
+      try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Popup başlatılamadı'); } catch(e) {}
     }
   }
 
@@ -202,6 +199,7 @@ class PopupUI {
       }
     } catch (error) {
       console.error('Message error:', error);
+      try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Mesaj gönderilemedi'); } catch(e) {}
     }
   }
 }

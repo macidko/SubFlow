@@ -76,47 +76,77 @@ window.UiManager = class UiManager {
     words.sort((a, b) => a.word.localeCompare(b.word));
 
     // Render
+    // Clear children safely
+    this.popupUI.wordsList.textContent = '';
     if (words.length === 0) {
-      this.popupUI.wordsList.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📚</div>
-          <div class="empty-text">
-            ${this.popupUI.searchQuery ? 'Kelime bulunamadı' : 'Henüz kelime yok<br>YouTube\'da Ctrl+Tık ile başlayın'}
-          </div>
-        </div>
-      `;
-    } else {
-      this.popupUI.wordsList.innerHTML = words.map(w => this.createWordElement(w)).join('');
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
 
-      // Add click listeners to word items
-      this.popupUI.wordsList.querySelectorAll('.word-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const word = item.dataset.word;
-          this.popupUI.dataManager.toggleWordStatus(word);
-        });
-      });
+      const icon = document.createElement('div');
+      icon.className = 'empty-icon';
+      icon.textContent = '📚';
+
+      const text = document.createElement('div');
+      text.className = 'empty-text';
+      if (this.popupUI.searchQuery) {
+        text.textContent = 'Kelime bulunamadı';
+      } else {
+        // Create two text nodes with a line break element between them to avoid innerHTML
+        const line1 = document.createElement('div');
+        line1.textContent = 'Henüz kelime yok';
+        const line2 = document.createElement('div');
+        line2.textContent = "YouTube'da Ctrl+Tık ile başlayın";
+        text.appendChild(line1);
+        text.appendChild(line2);
+      }
+
+      empty.appendChild(icon);
+      empty.appendChild(text);
+      this.popupUI.wordsList.appendChild(empty);
+    } else {
+      for (const w of words) {
+        const el = this.createWordElement(w);
+        this.popupUI.wordsList.appendChild(el);
+      }
     }
   }
 
   createWordElement({ word, status }) {
-    const translationHTML = this.popupUI.showTranslations
-      ? `<div class="word-translation loading" data-word="${word}">Çeviriliyor...</div>`
-      : '';
+    const item = document.createElement('div');
+    item.className = 'word-item';
+    item.dataset.word = word;
+    item.dataset.status = status;
 
-    const item = `
-      <div class="word-item" data-word="${word}" data-status="${status}">
-        <div class="word-dot ${status}"></div>
-        <div class="word-info">
-          <div class="word-text">${word}</div>
-          ${translationHTML}
-        </div>
-      </div>
-    `;
+    const dot = document.createElement('div');
+    dot.className = `word-dot ${status}`;
 
-    // Load translation if needed
+    const info = document.createElement('div');
+    info.className = 'word-info';
+
+    const text = document.createElement('div');
+    text.className = 'word-text';
+    text.textContent = word;
+
+    info.appendChild(text);
+
     if (this.popupUI.showTranslations) {
+      const translation = document.createElement('div');
+      translation.className = 'word-translation loading';
+      translation.dataset.word = word;
+      translation.textContent = 'Çeviriliyor...';
+      info.appendChild(translation);
+
+      // Load translation if needed
       setTimeout(() => this.popupUI.fetchAndDisplayTranslation(word), 50);
     }
+
+    item.appendChild(dot);
+    item.appendChild(info);
+
+    // Click handler
+    item.addEventListener('click', () => {
+      this.popupUI.dataManager.toggleWordStatus(word);
+    });
 
     return item;
   }

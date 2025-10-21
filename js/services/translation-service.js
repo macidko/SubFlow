@@ -8,7 +8,8 @@ class TranslationService {
     this.apiEndpoint = 'https://translate.googleapis.com/translate_a/single';
     this.requestDelay = 300; // ms between requests
     this.lastRequestTime = 0;
-    this.storageManager = window.storageManager; // Use centralized storage
+  // Use background-delegated storage operations via delegateStorageOp
+  this.delegate = window.delegateStorageOp;
   }
 
   static async create() {
@@ -20,7 +21,7 @@ class TranslationService {
   async loadCache() {
     try {
       // Use storage manager instead of direct chrome.storage
-      const data = await this.storageManager.get(['translationCache', 'cacheTimestamps']);
+  const data = await this.delegate('get', ['translationCache', 'cacheTimestamps']);
       
       const now = Date.now();
       const validCache = {};
@@ -40,6 +41,7 @@ class TranslationService {
       console.log(`✅ [TranslationService] Loaded ${this.cache.size} cached translations`);
     } catch (error) {
       console.error('❌ [TranslationService] Failed to load cache:', error);
+      try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Çeviri önbelleği yüklenemedi'); } catch(e) {}
     }
   }
 
@@ -59,14 +61,12 @@ class TranslationService {
       }
       
       // Use storage manager for atomic save
-      await this.storageManager.set({
-        translationCache: cacheObj,
-        cacheTimestamps: timestampObj
-      });
+      await this.delegate('set', { translationCache: cacheObj, cacheTimestamps: timestampObj });
       
       console.log(`💾 [TranslationService] Saved ${this.cache.size} translations to cache`);
     } catch (error) {
       console.error('❌ [TranslationService] Failed to save cache:', error);
+      try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Çeviri önbelleği kaydedilemedi'); } catch(e) {}
     }
   }
 
@@ -176,6 +176,7 @@ class TranslationService {
 
     } catch (error) {
       console.error('Translation failed:', error);
+      try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Çeviri başarısız oldu'); } catch(e) {}
       return null;
     }
   }
@@ -232,10 +233,7 @@ class TranslationService {
   async clearCache() {
     this.cache.clear();
     // Use storage manager for atomic clear
-    await this.storageManager.set({
-      translationCache: {},
-      cacheTimestamps: {}
-    });
+    await this.delegate('set', { translationCache: {}, cacheTimestamps: {} });
     console.log('🗑️ [TranslationService] Cache cleared');
   }
 

@@ -7,7 +7,7 @@ window.DataManager = class DataManager {
   }
 
   async loadStoredData() {
-    const data = await storageManager.get(STORAGE_SCHEMA);
+    const data = await window.delegateStorageOp('get', STORAGE_SCHEMA);
 
     this.popupUI.knownWords = new Set(data.knownWords || []);
     this.popupUI.unknownWords = new Set(data.unknownWords || []);
@@ -50,25 +50,25 @@ window.DataManager = class DataManager {
     // Update using storage manager (atomic operations!)
     switch (nextState) {
       case WORD_STATES.KNOWN:
-        // Move to known
-        await storageManager.removeFromSet('unknownWords', word);
-        await storageManager.addToSet('knownWords', word);
+        // Move to known (delegate to background)
+        await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
+        await window.delegateStorageOp('addToSet', { key: 'knownWords', item: word });
         this.popupUI.knownWords.add(word);
         this.popupUI.unknownWords.delete(word);
         break;
 
       case WORD_STATES.LEARNING:
-        // Move to learning
-        await storageManager.removeFromSet('knownWords', word);
-        await storageManager.addToSet('unknownWords', word);
+        // Move to learning (delegate to background)
+        await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
+        await window.delegateStorageOp('addToSet', { key: 'unknownWords', item: word });
         this.popupUI.unknownWords.add(word);
         this.popupUI.knownWords.delete(word);
         break;
 
       case WORD_STATES.UNMARKED:
-        // Remove from both
-        await storageManager.removeFromSet('knownWords', word);
-        await storageManager.removeFromSet('unknownWords', word);
+        // Remove from both (delegate to background)
+        await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
+        await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
         this.popupUI.knownWords.delete(word);
         this.popupUI.unknownWords.delete(word);
         break;
@@ -84,18 +84,17 @@ window.DataManager = class DataManager {
   }
 
   async clearAllWords() {
-    if (!confirm('Tüm kelimeler silinecek. Emin misiniz?')) {
-      return;
-    }
+    const ok = await (window.toast && typeof window.toast.confirmAsync === 'function'
+      ? window.toast.confirmAsync('Tüm kelimeler silinecek. Emin misiniz?', { confirmText: 'Evet', cancelText: 'Hayır' })
+      : (window.confirm('Tüm kelimeler silinecek. Emin misiniz?')));
+
+    if (!ok) return;
 
     this.popupUI.knownWords.clear();
     this.popupUI.unknownWords.clear();
     this.popupUI.translations.clear();
 
-    await storageManager.set({
-      knownWords: [],
-      unknownWords: []
-    });
+    await window.delegateStorageOp('set', { knownWords: [], unknownWords: [] });
 
     await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
     this.popupUI.uiManager.updateUI();

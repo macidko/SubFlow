@@ -46,6 +46,10 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     this.currentMenu = null;
     this.currentMenuClickHandler = null;
     this.menuTimeouts = [];
+    
+    // Event listener tracking to prevent leaks
+    // Map<Element, Array<{ event: string, handler: Function }>>
+    this._trackedListeners = new Map();
   }
 
   async init() {
@@ -53,14 +57,8 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
       // Wait for globals to load
       await window.SubtitleUtils.waitForGlobals();
 
-      // Now we can safely use window properties
-      this.storage = window.storageManager;
-
-      // Initialize storage manager
-      await this.storage.initialize(window.STORAGE_SCHEMA);
-
-      // Load all settings
-      const data = await this.storage.get(window.STORAGE_SCHEMA);
+  // Load initial settings from background storage via RPC
+  const data = await window.delegateStorageOp('get', window.STORAGE_SCHEMA);
 
       this.knownWords = new Set(data.knownWords || []);
       this.unknownWords = new Set(data.unknownWords || []);
@@ -83,6 +81,7 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
     } catch (error) {
       console.error('❌ Init error:', error);
+      try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Altyazı sistemi başlatılamadı'); } catch(e) {}
     }
   }
 
@@ -166,7 +165,9 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
    * Listen for storage changes from popup
    */
   setupStorageListener() {
-    this.storage.onChanged((changes) => {
+    // Use chrome.storage.onChanged directly (background is authoritative for writes)
+    this._storageChangeHandler = (changes, areaName) => {
+      if (areaName !== 'local') return;
 
       // Update word lists
       if (changes.knownWords) {
@@ -195,7 +196,9 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
       // Re-render subtitles
       this.scanAndMirror();
-    });
+    };
+
+    chrome.storage.onChanged.addListener(this._storageChangeHandler);
   }
 
   /**
@@ -217,7 +220,7 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
       [window.MESSAGE_TYPES.TOGGLE]: async () => {
         this.isActive = !this.isActive;
-        await this.storage.set({ isActive: this.isActive });
+        await window.delegateStorageOp('set', { isActive: this.isActive });
 
         if (this.isActive) {
           this.scanAndMirror();
@@ -535,8 +538,8 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
   rebuildMimicLines(nativeLines) {
 
-    // Clear existing mimic lines
-    this.mimicContainer.innerHTML = '';
+  // Clear existing mimic lines (remove children safely)
+  if (this.mimicContainer) this.mimicContainer.textContent = '';
     this.mimicLines = [];
 
     // Create mimic line for each native line
@@ -598,21 +601,51 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
   }
 
   setMimicLineContent(mimicLine, text) {
-    // Create colorized HTML
-    const colorizedHTML = this.createColorizedHTML(text);
-
-    // Use DocumentFragment for atomic update
+    // Build content using safe DOM APIs (avoid innerHTML to prevent XSS)
     const fragment = document.createDocumentFragment();
-    const temp = document.createElement('div');
-    temp.innerHTML = colorizedHTML;
 
-    while (temp.firstChild) {
-      fragment.appendChild(temp.firstChild);
+    if (!text) {
+      // Clear children safely
+      mimicLine.textContent = '';
+      return;
     }
 
-    // Atomic replace
-    mimicLine.innerHTML = '';
-    mimicLine.appendChild(fragment);
+    const words = this.extractWordsWithPositions(text);
+    if (!words || words.length === 0) {
+      fragment.appendChild(document.createTextNode(text));
+    } else {
+      let lastIndex = 0;
+      for (const wordInfo of words) {
+        if (wordInfo.start > lastIndex) {
+          fragment.appendChild(document.createTextNode(text.slice(lastIndex, wordInfo.start)));
+        }
+
+        const cleanWord = wordInfo.word.toLowerCase();
+        const isKnown = this.knownWords.has(cleanWord);
+        const isUnknown = this.unknownWords.has(cleanWord);
+
+        const span = document.createElement('span');
+        span.className = 'mimic-word';
+        if (isKnown) span.classList.add('known-word');
+        else if (isUnknown) span.classList.add('unknown-word');
+        else span.classList.add('unmarked-word');
+
+        // set dataset and textContent (safe)
+        span.dataset.word = cleanWord;
+        span.textContent = wordInfo.text;
+
+        fragment.appendChild(span);
+        lastIndex = wordInfo.end;
+      }
+
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+    }
+
+  // Atomic replace (clear then append fragment)
+  mimicLine.textContent = '';
+  mimicLine.appendChild(fragment);
 
     // Setup click handlers
     this.setupWordClickHandlers(mimicLine);
@@ -705,17 +738,81 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     const wordSpans = mimicLine.querySelectorAll('.mimic-word');
 
     wordSpans.forEach(span => {
-      span.addEventListener('click', (e) => {
+      // Use tracked listeners so we can remove them later
+      this._addTrackedListener(span, 'click', function (e) {
         e.stopPropagation();
-        console.debug('🖱️ mimic-word clicked (span.dataset.word):', span.dataset.word, span);
-        this.showWordMenu(span, e);
-      });
+        console.debug('🖱️ mimic-word clicked (span.dataset.word):', this.dataset.word, this);
+        // Forward to instance method
+        // eslint-disable-next-line no-unused-expressions
+        (this.__perfectMimicInstance || window.perfectMimic)?.menuSystem?.showWordMenu(this, e);
+      }.bind(span));
 
       if (this.pauseOnHover) {
-        span.addEventListener('mouseenter', () => this.pauseVideo());
-        span.addEventListener('mouseleave', () => this.resumeVideo());
+        this._addTrackedListener(span, 'mouseenter', () => this.pauseVideo());
+        this._addTrackedListener(span, 'mouseleave', () => this.resumeVideo());
       }
     });
+  }
+
+  /**
+   * Track and add an event listener so it can be cleaned up later.
+   * element: DOM Element
+   * event: string
+   * handler: Function (already bound if necessary)
+   */
+  _addTrackedListener(element, event, handler) {
+    element.addEventListener(event, handler);
+
+    let arr = this._trackedListeners.get(element);
+    if (!arr) {
+      arr = [];
+      this._trackedListeners.set(element, arr);
+    }
+
+    arr.push({ event, handler });
+  }
+
+  /**
+   * Remove all tracked listeners and observers and DOM created by this instance.
+   */
+  destroy() {
+    // Remove tracked listeners
+    try {
+      this._trackedListeners.forEach((listeners, element) => {
+        listeners.forEach(({ event, handler }) => {
+          try { element.removeEventListener(event, handler); } catch (e) { /* ignore */ }
+        });
+      });
+      this._trackedListeners.clear();
+    } catch (e) {
+      console.warn('Error cleaning tracked listeners', e);
+    }
+
+    // Disconnect observers
+    try { this.structureObserver?.disconnect(); } catch (e) { /* ignore */ }
+    try { this.textObserver?.disconnect(); } catch (e) { /* ignore */ }
+    try { this.attributeObserver?.disconnect(); } catch (e) { /* ignore */ }
+
+    // Clear timeouts
+    try { this.menuTimeouts.forEach(t => clearTimeout(t)); this.menuTimeouts = []; } catch (e) { }
+
+    // Remove mimic container
+    try { if (this.mimicContainer && this.mimicContainer.parentNode) this.mimicContainer.parentNode.removeChild(this.mimicContainer); } catch (e) { }
+    this.mimicContainer = null;
+    this.mimicLines = [];
+
+    // Remove storage change listener if attached
+    try {
+      if (this._storageChangeHandler) {
+        chrome.storage.onChanged.removeListener(this._storageChangeHandler);
+        this._storageChangeHandler = null;
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // Remove any global references
+    try { if (window.perfectMimic === this) window.perfectMimic = null; } catch (e) { }
   }
 
   pauseVideo() {
@@ -734,7 +831,7 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
   clearMimicLines() {
     if (this.mimicContainer) {
-      this.mimicContainer.innerHTML = '';
+      this.mimicContainer.textContent = '';
       this.mimicLines = [];
     }
   }

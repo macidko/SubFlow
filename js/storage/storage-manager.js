@@ -79,16 +79,22 @@ class StorageManager {
       throw new Error('[StorageManager] Not initialized! Call initialize() first.');
     }
 
-    // Merge with cache to preserve other keys
-    const merged = { ...this.cache, ...items };
-    
-    // Write to storage
+    // To avoid cross-context race overwrites, always read the latest
+    // values from chrome.storage.local before merging and writing.
+    // This ensures we don't accidentally overwrite changes made by other
+    // extension contexts (popup/background/content scripts).
+    const latestRemote = await chrome.storage.local.get();
+
+    // Merge remote state with our items, giving priority to items
+    const merged = { ...latestRemote, ...items };
+
+    // Write merged state back to storage
     await chrome.storage.local.set(merged);
-    
-    // Update cache
+
+    // Update cache to the freshly written merged state
     this.cache = merged;
-    
-    console.log('[StorageManager] SET:', Object.keys(items), '→ Success');
+
+    console.log('[StorageManager] SET (merged with remote):', Object.keys(items), '→ Success');
   }
 
   /**
@@ -124,15 +130,20 @@ class StorageManager {
         throw new Error('[StorageManager] Not initialized! Call initialize() first.');
       }
 
-      // Get current value from cache
-      const currentValue = this.cache[key];
-      
-      // Apply update function
+      // Read the freshest value for this key from remote storage first.
+      // This protects against races where another context may have updated
+      // the key outside of this context's cache.
+      const remoteObj = await chrome.storage.local.get(key);
+      const currentValue = (remoteObj && remoteObj.hasOwnProperty(key))
+        ? remoteObj[key]
+        : this.cache[key];
+
+      // Apply update function to the freshest value
       const newValue = await updateFn(currentValue);
-      
-      // Save to storage (use internal method to avoid queue nesting!)
+
+      // Save to storage (use internal method which now merges with remote)
       await this._setInternal({ [key]: newValue });
-      
+
       console.log('[StorageManager] UPDATE:', key, '→', newValue);
       return newValue;
     });
@@ -188,25 +199,25 @@ class StorageManager {
   async moveToSet(fromKey, toKey, item) {
     const resultPromise = this.queue.then(async () => {
       try {
-        // Get current arrays
-        const fromArray = this.cache[fromKey] || [];
-        const toArray = this.cache[toKey] || [];
-        
-        // Create sets
+        // Read latest arrays from remote storage to avoid operating on stale cache
+        const remote = await chrome.storage.local.get([fromKey, toKey]);
+        const fromArray = (remote && remote[fromKey]) ? remote[fromKey] : (this.cache[fromKey] || []);
+        const toArray = (remote && remote[toKey]) ? remote[toKey] : (this.cache[toKey] || []);
+
+        // Create sets and perform move
         const fromSet = new Set(fromArray);
         const toSet = new Set(toArray);
-        
-        // Move item
+
         fromSet.delete(item);
         toSet.add(item);
 
-        // Save both atomically (use internal method to avoid queue nesting!)
+        // Save both atomically (internal method merges with latest remote)
         await this._setInternal({
           [fromKey]: Array.from(fromSet),
           [toKey]: Array.from(toSet)
         });
 
-        console.log('[StorageManager] MOVE:', item, 'from', fromKey, 'to', toKey);
+        console.log('[StorageManager] MOVE (based on remote):', item, 'from', fromKey, 'to', toKey);
       } catch (error) {
         console.error('[StorageManager] MOVE ERROR:', error);
         throw error;
@@ -281,8 +292,10 @@ class StorageManager {
 }
 
 // Create singleton instance (only if not already exists)
-if (!window.storageManager) {
-  window.storageManager = new StorageManager();
+// Use globalThis so this module can be loaded both in window (content scripts)
+// and in service worker/global (background) contexts.
+if (!globalThis.storageManager) {
+  globalThis.storageManager = new StorageManager();
 }
 
 // Export for use in other modules

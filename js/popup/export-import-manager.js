@@ -42,7 +42,7 @@ window.ExportImportManager = class ExportImportManager {
         this.popupUI.translations = new Map([...this.popupUI.translations, ...Object.entries(data.translations)]);
       }
 
-      await storageManager.set({
+      await window.delegateStorageOp('set', {
         knownWords: Array.from(this.popupUI.knownWords),
         unknownWords: Array.from(this.popupUI.unknownWords)
       });
@@ -50,9 +50,9 @@ window.ExportImportManager = class ExportImportManager {
       await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
       this.popupUI.uiManager.updateUI();
 
-      alert('Kelimeler başarıyla içe aktarıldı!');
+      window.toast.success('Kelimeler başarıyla içe aktarıldı!');
     } catch (error) {
-      alert('İçe aktarma hatası!');
+      window.toast.error('İçe aktarma hatası!');
     }
 
     event.target.value = '';

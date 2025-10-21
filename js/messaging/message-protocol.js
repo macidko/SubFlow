@@ -27,6 +27,30 @@ window.MESSAGE_TYPES = window.MESSAGE_TYPES || {
 };
 
 /**
+ * Delegate storage operation to background service worker and await result
+ * @param {string} op - One of get/set/addToSet/removeFromSet/moveToSet/export
+ * @param {any} args - Arguments object for the op
+ * @returns {Promise<any>} result
+ */
+window.delegateStorageOp = window.delegateStorageOp || async function(op, args = {}) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: 'storageOp', op, args }, (response) => {
+      if (!response) return reject(new Error('No response from background'));
+      if (response.ok) return resolve(response.result);
+      // Non-blocking user feedback
+      try {
+        if (window && window.toast && typeof window.toast.error === 'function') {
+          window.toast.error(response.error || 'Depo işlemi başarısız oldu');
+        }
+      } catch (e) {
+        // ignore toast errors
+      }
+      return reject(new Error(response.error || 'storageOp failed'));
+    });
+  });
+};
+
+/**
  * Create a standardized message
  * @param {string} type - Message type from MESSAGE_TYPES
  * @param {*} payload - Message data

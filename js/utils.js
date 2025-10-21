@@ -8,13 +8,24 @@ window.SubtitleUtils = {
    * This ensures scripts are loaded in correct order
    */
   waitForGlobals() {
+    // Background-first readiness: prefer delegateStorageOp (background RPC) instead of
+    // relying on a window.storageManager instance (which may not exist in content scripts).
     return new Promise((resolve) => {
       const check = () => {
+        // If delegateStorageOp (message bridge) is available, consider globals ready.
+        if (typeof window.delegateStorageOp === 'function' && window.STORAGE_SCHEMA && window.MESSAGE_TYPES) {
+          resolve();
+          return;
+        }
+
+        // Fallback: if window.storageManager exists (older contexts), accept that too.
         if (window.storageManager && window.STORAGE_SCHEMA && window.MESSAGE_TYPES) {
           resolve();
-        } else {
-          setTimeout(check, 100);
+          return;
         }
+
+        // Otherwise poll until one of the above becomes available.
+        setTimeout(check, 100);
       };
       check();
     });
@@ -24,9 +35,19 @@ window.SubtitleUtils = {
    * Escape HTML special characters
    */
   escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    if (text == null) return '';
+    return String(text).replace(/[&<>"'`=\/]/g, function (s) {
+      return ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '`': '&#96;',
+        '=': '&#61;',
+        '/': '&#x2F;'
+      })[s];
+    });
   },
 
   /**

@@ -31,8 +31,8 @@ window.EventHandlers = class EventHandlers {
 
     // Language selector
     this.popupUI.targetLangSelect.addEventListener('change', async (e) => {
-      this.popupUI.targetLang = e.target.value;
-      await storageManager.set({ targetLang: this.popupUI.targetLang });
+  this.popupUI.targetLang = e.target.value;
+  await window.delegateStorageOp('set', { targetLang: this.popupUI.targetLang });
       this.popupUI.uiManager.updateWordsList();
     });
 
@@ -47,7 +47,7 @@ window.EventHandlers = class EventHandlers {
         this.popupUI.toggleExtension.classList.remove('active');
       }
 
-      await storageManager.set({ isActive: this.popupUI.isActive });
+  await window.delegateStorageOp('set', { isActive: this.popupUI.isActive });
       await broadcastToAllTabs(MESSAGE_TYPES.TOGGLE, { isActive: this.popupUI.isActive });
       await this.popupUI.uiManager.checkConnectionStatus();
     });
@@ -63,7 +63,7 @@ window.EventHandlers = class EventHandlers {
         this.popupUI.toggleTranslations.classList.remove('active');
       }
 
-      await storageManager.set({ showTranslations: this.popupUI.showTranslations });
+  await window.delegateStorageOp('set', { showTranslations: this.popupUI.showTranslations });
       this.popupUI.uiManager.updateWordsList();
     });
 
@@ -73,7 +73,7 @@ window.EventHandlers = class EventHandlers {
       this.popupUI.pauseOnHoverCheckbox.checked = this.popupUI.pauseOnHover;
       this.popupUI.togglePauseOnHover.classList.toggle('active', this.popupUI.pauseOnHover);
 
-      await storageManager.set({ pauseOnHover: this.popupUI.pauseOnHover });
+  await window.delegateStorageOp('set', { pauseOnHover: this.popupUI.pauseOnHover });
       await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
         pauseOnHover: this.popupUI.pauseOnHover
       });
@@ -83,8 +83,8 @@ window.EventHandlers = class EventHandlers {
 
     // Color pickers
     this.popupUI.knownColorInput.addEventListener('change', async (e) => {
-      this.popupUI.knownColor = e.target.value;
-      await storageManager.set({ knownColor: this.popupUI.knownColor });
+  this.popupUI.knownColor = e.target.value;
+  await window.delegateStorageOp('set', { knownColor: this.popupUI.knownColor });
       await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
         knownColor: this.popupUI.knownColor,
         learningColor: this.popupUI.learningColor
@@ -92,8 +92,8 @@ window.EventHandlers = class EventHandlers {
     });
 
     this.popupUI.learningColorInput.addEventListener('change', async (e) => {
-      this.popupUI.learningColor = e.target.value;
-      await storageManager.set({ learningColor: this.popupUI.learningColor });
+  this.popupUI.learningColor = e.target.value;
+  await window.delegateStorageOp('set', { learningColor: this.popupUI.learningColor });
       await broadcastToAllTabs(MESSAGE_TYPES.SETTINGS_UPDATED, {
         knownColor: this.popupUI.knownColor,
         learningColor: this.popupUI.learningColor
@@ -125,7 +125,7 @@ window.EventHandlers = class EventHandlers {
     const allWords = [...this.popupUI.knownWords, ...this.popupUI.unknownWords];
 
     if (allWords.length === 0) {
-      alert('Henüz kelime yok!');
+      window.toast.info('Henüz kelime yok!');
       return;
     }
 
@@ -135,9 +135,9 @@ window.EventHandlers = class EventHandlers {
     try {
       await this.popupUI.translationService.translateBatch(allWords, this.popupUI.sourceLang, this.popupUI.targetLang);
       this.popupUI.uiManager.updateWordsList();
-      alert(`${allWords.length} kelime çevrildi!`);
+  window.toast.success(`${allWords.length} kelime çevrildi!`);
     } catch (error) {
-      alert('Çeviri hatası!');
+  window.toast.error('Çeviri hatası!');
     } finally {
       this.popupUI.translateAllBtn.textContent = '🌐 Tüm Kelimeleri Çevir';
       this.popupUI.translateAllBtn.disabled = false;
@@ -180,7 +180,7 @@ window.EventHandlers = class EventHandlers {
         this.popupUI.translations = new Map([...this.popupUI.translations, ...Object.entries(data.translations)]);
       }
 
-      await storageManager.set({
+      await window.delegateStorageOp('set', {
         knownWords: Array.from(this.popupUI.knownWords),
         unknownWords: Array.from(this.popupUI.unknownWords)
       });
@@ -188,9 +188,9 @@ window.EventHandlers = class EventHandlers {
       await broadcastToAllTabs(MESSAGE_TYPES.REFRESH);
       this.popupUI.uiManager.updateUI();
 
-      alert('Kelimeler başarıyla içe aktarıldı!');
+      window.toast.success('Kelimeler başarıyla içe aktarıldı!');
     } catch (error) {
-      alert('İçe aktarma hatası!');
+      window.toast.error('İçe aktarma hatası!');
     }
 
     event.target.value = '';
