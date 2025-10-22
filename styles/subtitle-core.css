@@ -21,6 +21,8 @@
   gap: var(--subtitle-gap) !important;
   z-index: var(--z-subtitle) !important;
   pointer-events: none !important;
+  animation: subtitleSlideIn 300ms cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+  font-size: var(--subtitle-font-size) !important;
 }
 
 /* Mimic line styling - LEFT ALIGNED WORDS, NO CENTERING */
@@ -37,5 +39,99 @@
   background: var(--subtitle-bg) !important;
   border-radius: var(--subtitle-line-radius) !important;
   box-shadow: 0 2px 8px var(--subtitle-text-shadow) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   pointer-events: auto !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important; /* Safari support */
+}
+
+/* Subtitle animations */
+@keyframes subtitleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mimic-subtitle-container {
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Mobile devices */
+@media (max-width: 767px) {
+  .mimic-subtitle-container {
+    bottom: calc(12% + env(safe-area-inset-bottom, 0px)) !important;
+    max-width: 90% !important;
+    font-size: var(--subtitle-font-size-mobile) !important;
+  }
+
+  .mimic-line {
+    padding: 10px 16px !important;
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mimic-subtitle-container {
+    bottom: calc(10% + env(safe-area-inset-bottom, 0px)) !important;
+    font-size: var(--subtitle-font-size-tablet) !important;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) and (max-width: 1919px) {
+  .mimic-subtitle-container {
+    font-size: var(--subtitle-font-size-desktop) !important;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1920px) {
+  .mimic-subtitle-container {
+    max-width: 1200px !important;
+    font-size: var(--subtitle-font-size-large) !important;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mimic-subtitle-container {
+    background: rgba(0, 0, 0, 0.95) !important;
+    border: 2px solid #ffffff !important;
+  }
+
+  .mimic-line {
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .known-word {
+    color: #22c55e !important; /* Brighter green */
+  }
+
+  .unknown-word {
+    color: #fb923c !important; /* Brighter orange */
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mimic-subtitle-container {
+    background: rgba(10, 10, 10, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
 }

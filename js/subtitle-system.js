@@ -52,6 +52,152 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     this._trackedListeners = new Map();
   }
 
+  /**
+   * Validate class names to prevent XSS
+   */
+  validateClassName(className) {
+    // Whitelist approach
+    const validClasses = [
+      'mimic-word',
+      'known-word',
+      'learning-word',
+      'unmarked-word',
+      'mimic-subtitle-text'
+    ];
+    
+    if (!validClasses.includes(className)) {
+      console.warn(`Invalid class name rejected: ${className}`);
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Initialize accessibility features
+   */
+  initAccessibility() {
+    // Add hidden status descriptions for screen readers
+    const statusKnown = document.createElement('div');
+    statusKnown.id = 'word-status-known';
+    statusKnown.className = 'sr-only';
+    statusKnown.textContent = 'This word is marked as known';
+
+    const statusLearning = document.createElement('div');
+    statusLearning.id = 'word-status-learning';
+    statusLearning.className = 'sr-only';
+    statusLearning.textContent = 'You are currently learning this word';
+
+    const statusUnmarked = document.createElement('div');
+    statusUnmarked.id = 'word-status-unmarked';
+    statusUnmarked.className = 'sr-only';
+    statusUnmarked.textContent = 'This word is not marked';
+
+    document.body.append(statusKnown, statusLearning, statusUnmarked);
+
+    // Initialize keyboard navigation
+    this.initKeyboardNavigation();
+  }
+
+  /**
+   * Initialize keyboard navigation for subtitle words
+   */
+  initKeyboardNavigation() {
+    this._currentFocusIndex = -1;
+    this._wordElements = [];
+
+    // Update word list when subtitles change
+    this.updateWordList();
+
+    // Attach keyboard listeners
+    document.addEventListener('keydown', (e) => {
+      // Only handle if subtitle system is active and visible
+      if (!this.isActive || !this.mimicContainer) return;
+
+      switch(e.key) {
+        case 'Tab':
+          e.preventDefault();
+          if (e.shiftKey) {
+            this.focusPreviousWord();
+          } else {
+            this.focusNextWord();
+          }
+          break;
+
+        case 'ArrowRight':
+          e.preventDefault();
+          this.focusNextWord();
+          break;
+
+        case 'ArrowLeft':
+          e.preventDefault();
+          this.focusPreviousWord();
+          break;
+
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          this.activateFocusedWord();
+          break;
+
+        case 'Escape':
+          e.preventDefault();
+          this.clearFocus();
+          break;
+      }
+    });
+  }
+
+  /**
+   * Update the list of focusable word elements
+   */
+  updateWordList() {
+    if (!this.mimicContainer) return;
+    this._wordElements = Array.from(this.mimicContainer.querySelectorAll('.mimic-word'));
+  }
+
+  /**
+   * Focus the next word in the list
+   */
+  focusNextWord() {
+    this.updateWordList();
+    if (this._wordElements.length === 0) return;
+
+    this._currentFocusIndex = (this._currentFocusIndex + 1) % this._wordElements.length;
+    this._wordElements[this._currentFocusIndex].focus();
+  }
+
+  /**
+   * Focus the previous word in the list
+   */
+  focusPreviousWord() {
+    this.updateWordList();
+    if (this._wordElements.length === 0) return;
+
+    this._currentFocusIndex =
+      (this._currentFocusIndex - 1 + this._wordElements.length) % this._wordElements.length;
+    this._wordElements[this._currentFocusIndex].focus();
+  }
+
+  /**
+   * Activate the currently focused word (simulate click)
+   */
+  activateFocusedWord() {
+    if (this._currentFocusIndex >= 0 && this._wordElements[this._currentFocusIndex]) {
+      this._wordElements[this._currentFocusIndex].click();
+    }
+  }
+
+  /**
+   * Clear focus from all words
+   */
+  clearFocus() {
+    this._currentFocusIndex = -1;
+    if (document.activeElement && this._wordElements.includes(document.activeElement)) {
+      document.activeElement.blur();
+    }
+  }
+
   async init() {
     try {
       // Wait for globals to load
@@ -69,6 +215,9 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
       // Inject dynamic styles
       this.injectDynamicStyles();
+
+      // Initialize accessibility features
+      this.initAccessibility();
 
       // Setup storage change listener
       this.setupStorageListener();
@@ -625,10 +774,26 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
         const isUnknown = this.unknownWords.has(cleanWord);
 
         const span = document.createElement('span');
-        span.className = 'mimic-word';
-        if (isKnown) span.classList.add('known-word');
-        else if (isUnknown) span.classList.add('unknown-word');
-        else span.classList.add('unmarked-word');
+        // Base class
+        if (this.validateClassName('mimic-word')) {
+          span.className = 'mimic-word';
+        }
+        
+        // Status class
+        if (isKnown && this.validateClassName('known-word')) {
+          span.classList.add('known-word');
+        } else if (isUnknown && this.validateClassName('learning-word')) {
+          span.classList.add('learning-word');
+        } else if (this.validateClassName('unmarked-word')) {
+          span.classList.add('unmarked-word');
+        }
+
+        // ARIA attributes for accessibility
+        span.setAttribute('role', 'button');
+        span.setAttribute('tabindex', '0');
+        span.setAttribute('aria-label', 
+          `${isKnown ? 'Known' : isUnknown ? 'Learning' : 'Unmarked'} word: ${wordInfo.text}. Press Enter or Space to view options`
+        );
 
         // set dataset and textContent (safe)
         span.dataset.word = cleanWord;

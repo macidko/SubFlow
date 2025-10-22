@@ -4,60 +4,80 @@
 window.WordManager = class WordManager {
   constructor(subtitleSystem) {
     this.system = subtitleSystem;
+    this.syncLock = false; // Prevent race conditions
+    this.pendingSync = null; // Debounced sync
   }
 
   async handleWordClick(wordSpan) {
     const word = wordSpan.dataset.word;
     if (!word) return;
 
-    // Animate click
-    wordSpan.style.transform = 'scale(1.15)';
-    setTimeout(() => {
-      wordSpan.style.transform = 'scale(1)';
-    }, 150);
-
-    // Get current state
-    const currentState = window.getWordState(word, this.system.knownWords, this.system.unknownWords);
-    const nextState = window.getNextWordState(currentState);
-
-
-    // Update state using storage manager (prevents race conditions!)
-    switch (nextState) {
-      case window.WORD_STATES.KNOWN:
-        // Move to known (delegate writes to background)
-        await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
-        await window.delegateStorageOp('addToSet', { key: 'knownWords', item: word });
-        this.system.knownWords.add(word);
-        this.system.unknownWords.delete(word);
-        wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.KNOWN]}`;
-        break;
-
-      case window.WORD_STATES.LEARNING:
-        // Move to learning (delegate writes to background)
-        await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
-        await window.delegateStorageOp('addToSet', { key: 'unknownWords', item: word });
-        this.system.unknownWords.add(word);
-        this.system.knownWords.delete(word);
-        wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.LEARNING]}`;
-        break;
-
-      case window.WORD_STATES.UNMARKED:
-        // Remove from both (delegate writes to background)
-        await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
-        await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
-        this.system.knownWords.delete(word);
-        this.system.unknownWords.delete(word);
-        wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.UNMARKED]}`;
-        break;
+    // Prevent concurrent operations
+    if (this.syncLock) {
+      console.debug('Sync in progress, queuing word click for', word);
+      return; // Or queue it, but for now just skip
     }
 
-    // Update all instances of this word
-    this.updateAllWordInstances(word);
+    this.syncLock = true;
 
+    try {
+      // Animate click
+      wordSpan.style.transform = 'scale(1.15)';
+      setTimeout(() => {
+        wordSpan.style.transform = 'scale(1)';
+      }, 150);
+
+      // Get current state
+      const currentState = window.getWordState(word, this.system.knownWords, this.system.unknownWords);
+      const nextState = window.getNextWordState(currentState);
+
+      // Update state using storage manager (prevents race conditions!)
+      switch (nextState) {
+        case window.WORD_STATES.KNOWN:
+          // Move to known (delegate writes to background)
+          await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
+          await window.delegateStorageOp('addToSet', { key: 'knownWords', item: word });
+          this.system.knownWords.add(word);
+          this.system.unknownWords.delete(word);
+          wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.KNOWN]}`;
+          break;
+
+        case window.WORD_STATES.LEARNING:
+          // Move to learning (delegate writes to background)
+          await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
+          await window.delegateStorageOp('addToSet', { key: 'unknownWords', item: word });
+          this.system.unknownWords.add(word);
+          this.system.knownWords.delete(word);
+          wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.LEARNING]}`;
+          break;
+
+        case window.WORD_STATES.UNMARKED:
+          // Remove from both (delegate writes to background)
+          await window.delegateStorageOp('removeFromSet', { key: 'knownWords', item: word });
+          await window.delegateStorageOp('removeFromSet', { key: 'unknownWords', item: word });
+          this.system.knownWords.delete(word);
+          this.system.unknownWords.delete(word);
+          wordSpan.className = `mimic-word ${window.WORD_CLASSES[window.WORD_STATES.UNMARKED]}`;
+          break;
+      }
+
+      // Update all instances of this word
+      this.updateAllWordInstances(word);
+    } finally {
+      this.syncLock = false;
+    }
   }
 
   async markAsKnown(word) {
     console.debug('[Action] markAsKnown invoked for', word);
+
+    // Prevent concurrent operations
+    if (this.syncLock) {
+      console.debug('Sync in progress, queuing markAsKnown for', word);
+      return; // Skip for now
+    }
+
+    this.syncLock = true;
 
     try {
   // ATOMIC OPERATION - delegate to background for atomic move
@@ -101,11 +121,21 @@ window.WordManager = class WordManager {
       }
 
       window.toast.error(`ERROR: ${err.message}`);
+    } finally {
+      this.syncLock = false;
     }
   }
 
   async markAsUnknown(word) {
     console.debug('[Action] markAsUnknown invoked for', word);
+
+    // Prevent concurrent operations
+    if (this.syncLock) {
+      console.debug('Sync in progress, queuing markAsUnknown for', word);
+      return; // Skip for now
+    }
+
+    this.syncLock = true;
 
     try {
   // ATOMIC OPERATION - delegate to background for atomic move
@@ -144,11 +174,21 @@ window.WordManager = class WordManager {
       }
 
       window.toast.error(`ERROR: ${err.message}`);
+    } finally {
+      this.syncLock = false;
     }
   }
 
   async removeFromList(word) {
     console.debug('[Action] removeFromList invoked for', word);
+
+    // Prevent concurrent operations
+    if (this.syncLock) {
+      console.debug('Sync in progress, queuing removeFromList for', word);
+      return; // Skip for now
+    }
+
+    this.syncLock = true;
 
     try {
       // Remove from both lists atomically via background set
@@ -168,6 +208,8 @@ window.WordManager = class WordManager {
     } catch (err) {
   console.error('❌ [ERROR] removeFromList failed for', word, ':', err);
   try { if (window && window.toast && typeof window.toast.error === 'function') window.toast.error('Kelime listeden silinemedi'); } catch(e) {}
+    } finally {
+      this.syncLock = false;
     }
   }
 

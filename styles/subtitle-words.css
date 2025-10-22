@@ -17,11 +17,16 @@
   background: var(--word-hover-bg) !important;
   box-shadow: 0 0 8px var(--word-hover-shadow) !important;
   border-radius: var(--radius-sm) !important;
+  transform: translateY(-2px) !important;
+  transition: all 150ms cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+  filter: drop-shadow(0 0 8px currentColor) brightness(1.2) !important;
 }
 
 /* Click feedback - subtle */
 .mimic-word:active {
   opacity: var(--word-active-opacity) !important;
+  transform: translateY(0) scale(0.98) !important;
+  transition: all 100ms ease !important;
 }
 
 /* Unmarked words - plain white */
@@ -42,6 +47,7 @@
   color: var(--known-hover) !important;
   background: none !important; /* REMOVED BACKGROUND */
   text-shadow: none !important; /* REMOVED GLOW */
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.8)) brightness(1.2) !important;
 }
 
 /* Unknown words - Color only (NO padding/background) - BOLD for visibility */
@@ -56,4 +62,91 @@
   color: var(--learning-hover) !important;
   background: none !important; /* REMOVED BACKGROUND */
   text-shadow: none !important; /* REMOVED GLOW */
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.8)) brightness(1.2) !important;
+}
+
+/* Focus states for keyboard navigation */
+.mimic-word:focus {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px !important;
+  border-radius: 3px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.mimic-word:focus-visible {
+  outline: 3px solid #60a5fa !important; /* Blue for keyboard focus */
+  outline-offset: 4px !important;
+  border-radius: 3px !important;
+  background: rgba(96, 165, 250, 0.1) !important;
+  transform: scale(1.05) !important;
+}
+
+.mimic-word:focus:not(:focus-visible) {
+  outline: none !important;
+  background: none !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mimic-word {
+    transition: none !important;
+  }
+
+  .mimic-word:hover {
+    transform: none !important;
+  }
+
+  .mimic-word:active {
+    transform: none !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Mobile devices - Larger tap targets */
+@media (max-width: 767px) {
+  .mimic-word {
+    padding: 4px !important;
+    margin: 0 2px !important;
+    min-width: var(--word-min-width-mobile) !important;
+    display: inline-block !important;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mimic-word:focus {
+    outline: 3px solid #ffffff !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .mimic-word:focus-visible {
+    outline: 4px solid #ffffff !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .known-word:hover {
+    filter: drop-shadow(0 0 16px #22c55e) brightness(1.4) !important;
+  }
+
+  .unknown-word:hover {
+    filter: drop-shadow(0 0 16px #fb923c) brightness(1.4) !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mimic-word:focus {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .mimic-word:focus-visible {
+    background: rgba(96, 165, 250, 0.15) !important;
+  }
 }
