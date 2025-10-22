@@ -2,12 +2,7 @@
 
 /* Mimic container - CENTERED FRAME, LEFT-ALIGNED CONTENT */
 .mimic-subtitle-container {
-  font-family: var(--font-family-subtitle) !important;
-  line-height: 1.4 !important;
-  color: var(--text-inverse) !important;
-  text-shadow:
-    1px 1px 2px var(--subtitle-shadow),
-    0 0 4px var(--subtitle-shadow-secondary) !important;
+  /* Positioning & Layout */
   position: absolute !important;
   bottom: var(--subtitle-bottom) !important;
   left: 50% !important;
@@ -21,26 +16,41 @@
   gap: var(--subtitle-gap) !important;
   z-index: var(--z-subtitle) !important;
   pointer-events: none !important;
-  animation: subtitleSlideIn 300ms cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+
+  /* Typography - Base only, lines will override */
+  font-family: var(--font-family-subtitle) !important;
   font-size: var(--subtitle-font-size) !important;
+  line-height: 1.4 !important;
+
+  /* Animation */
+  animation: subtitleSlideIn 300ms cubic-bezier(0.4, 0.0, 0.2, 1) !important;
 }
 
 /* Mimic line styling - LEFT ALIGNED WORDS, NO CENTERING */
 .mimic-line {
-  text-align: left !important;
-  white-space: pre-wrap !important;
-  word-wrap: break-word !important;
-  word-break: break-word !important;
+  /* Layout */
   display: block !important;
   width: auto !important; /* FIT CONTENT */
   max-width: none !important; /* NO MAX WIDTH LIMIT */
   margin: 0 !important; /* NO AUTO CENTERING */
   padding: var(--subtitle-line-padding-y) var(--subtitle-line-padding-x) !important;
+  pointer-events: auto !important;
+
+  /* Typography */
+  text-align: left !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  color: var(--text-inverse) !important;
+  text-shadow:
+    1px 1px 2px var(--subtitle-shadow),
+    0 0 4px var(--subtitle-shadow-secondary) !important;
+
+  /* Visual styling */
   background: var(--subtitle-bg) !important;
   border-radius: var(--subtitle-line-radius) !important;
   box-shadow: 0 2px 8px var(--subtitle-text-shadow) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  pointer-events: auto !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important; /* Safari support */
 }
@@ -110,12 +120,8 @@
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .mimic-subtitle-container {
-    background: rgba(0, 0, 0, 0.95) !important;
-    border: 2px solid #ffffff !important;
-  }
-
   .mimic-line {
+    background: rgba(0, 0, 0, 0.95) !important;
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
   }
 
@@ -130,7 +136,7 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .mimic-subtitle-container {
+  .mimic-line {
     background: rgba(10, 10, 10, 0.9) !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
   }
