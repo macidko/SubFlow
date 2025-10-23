@@ -3,7 +3,7 @@
 /* Word styling - ZERO PADDING to prevent layout shift */
 .mimic-word {
   cursor: pointer !important;
-  display: inline !important;
+  display: inline-block !important; /* inline-block to allow padding while staying inline */
   transition: none !important;
   border-radius: 0 !important;
   padding: 0 !important;

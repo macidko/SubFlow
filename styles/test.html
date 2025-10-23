@@ -1,0 +1,145 @@
+okey şimdi sorunumdan bahsediyorum ve şu stilleri artık düzeltiyoruz okey?
+
+
+<div class="ytp-caption-window-container" id="ytp-caption-window-container" data-layer="4">
+    <div class="caption-window ytp-caption-window-rollup" id="caption-window-1" dir="ltr" tabindex="0" lang="en"
+        draggable="true"
+        style="touch-action: none; text-align: left; overflow: hidden; top: 45.4924%; left: 63.7423%; width: 560px; height: 52px; margin-left: -280px; margin-top: -26px;">
+        <span class="captions-text" style="overflow-wrap: normal; display: block;">
+            <span class="caption-visual-line" style="display: block;">
+                <span class="ytp-caption-segment"
+                    style="display: inline-block; white-space: pre-wrap; background: rgba(8, 8, 8, 0.75); font-size: 21.3333px; color: rgb(255, 255, 255); fill: rgb(255, 255, 255); font-family: &quot;YouTube Noto&quot;, Roboto, Arial, Helvetica, Verdana, &quot;PT Sans Caption&quot;, sans-serif;">versus
+                    like really big allocations and
+                </span>
+            </span>
+            <span class="caption-visual-line" style="display: block;">
+                <span class="ytp-caption-segment"
+                    style="display: inline-block; white-space: pre-wrap; background: rgba(8, 8, 8, 0.75); font-size: 21.3333px; color: rgb(255, 255, 255); fill: rgb(255, 255, 255); font-family: &quot;YouTube Noto&quot;, Roboto, Arial, Helvetica, Verdana, &quot;PT Sans Caption&quot;, sans-serif;">
+                    and
+                    small allocations
+                </span>
+            </span>
+        </span>
+    </div>
+</div>
+
+
+
+altyazı html yapısı yukarıdaki gibi olmalı.
+
+youtubeden mirrorluyoruz ancak doğru html yapısında yapmıyoruz.
+
+
+şimdi sana var olan stillerini iletriyorum bunların. farklarına göre düzeltmeliyiz.
+
+
+.ytp-caption-window-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    pointer-events: none
+}
+
+
+.ytp-fullscreen-grid-active .html5-endscreen,.ytp-fullscreen-grid-active .ytp-ad-player-overlay-layout,.ytp-fullscreen-grid-active .ytp-caption-window-container,.ytp-grid-scrolling .html5-endscreen,.ytp-grid-scrolling .ytp-ad-player-overlay-layout,.ytp-grid-scrolling .ytp-caption-window-container,.html5-video-player.ended-mode .ytp-more-videos-button.ytp-button {
+    display: none
+}
+
+
+#inline-preview-player .ytp-caption-window-container,#inline-preview-player .caption-window {
+    pointer-events: none
+}
+
+.ytp-modern-caption#inline-preview-player .ytp-caption-window-container,.ytp-modern-caption.ytp-mweb-player .ytp-caption-window-container {
+    width: calc(100% - 48px)
+}
+.ytp-fullscreen-grid-active .html5-endscreen,.ytp-fullscreen-grid-active .ytp-ad-player-overlay-layout,.ytp-fullscreen-grid-active .ytp-caption-window-container,.ytp-grid-scrolling .html5-endscreen,.ytp-grid-scrolling .ytp-ad-player-overlay-layout,.ytp-grid-scrolling .ytp-caption-window-container,.html5-video-player.ended-mode .ytp-more-videos-button.ytp-button {
+    display: none
+}
+
+caption-window ytp-caption-window-rollup
+.caption-window {
+    position: absolute;
+    line-height: normal;
+    z-index: 41;
+    pointer-events: auto;
+    cursor: move;
+    cursor: -webkit-grab;
+    cursor: grab;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+}
+.ytp-caption-window-rollup.ytp-rollup-mode {
+    overflow: hidden
+}
+
+.ytp-caption-window-rollup.ytp-rollup-mode .captions-text {
+    -webkit-transition: -webkit-transform .433s cubic-bezier(0,0,.2,1);
+    transition: transform .433s cubic-bezier(0,0,.2,1),-webkit-transform .433s cubic-bezier(0,0,.2,1)
+}
+
+.caption-edit:focus,.caption-window:focus .caption-edit,.ytp-caption-window-rollup:hover .caption-edit,.ytp-caption-window-rollup .caption-edit:hover {
+    opacity: 1
+}
+
+caption-window ytp-caption-window-rollup
+
+.caption-window {
+    position: absolute;
+    line-height: normal;
+    z-index: 41;
+    pointer-events: auto;
+    cursor: move;
+    cursor: -webkit-grab;
+    cursor: grab;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+}
+
+.ytp-caption-window-rollup.ytp-rollup-mode .captions-text {
+    -webkit-transition: -webkit-transform .433s cubic-bezier(0,0,.2,1);
+    transition: transform .433s cubic-bezier(0,0,.2,1),-webkit-transform .433s cubic-bezier(0,0,.2,1)
+}
+.html5-video-player .caption-visual-line .ytp-caption-segment:first-child {
+    padding-left: .25em;
+    padding-top: 0
+}
+
+.html5-video-player .caption-visual-line .ytp-caption-segment:last-child {
+    padding-right: .25em;
+    padding-bottom: 0
+}
+
+.html5-video-player .ytp-vertical-caption .caption-visual-line .ytp-caption-segment:first-child {
+    padding-top: .25em;
+    padding-left: 0
+}
+.html5-video-player .ytp-vertical-caption .caption-visual-line .ytp-caption-segment:last-child {
+            padding-bottom: .25em;
+            padding-right: 0
+        }
+ytp-caption-segment
+
+
+.html5-video-player .caption-visual-line .ytp-caption-segment:first-child {
+    padding-left: .25em;
+    padding-top: 0
+}
+
+.html5-video-player .caption-visual-line .ytp-caption-segment:last-child {
+    padding-right: .25em;
+    padding-bottom: 0
+}
+
+.html5-video-player .ytp-vertical-caption .caption-visual-line .ytp-caption-segment:first-child {
+    padding-top: .25em;
+    padding-left: 0
+}
+
+        .html5-video-player .ytp-vertical-caption .caption-visual-line .ytp-caption-segment:last-child {
+            padding-bottom: .25em;
+            padding-right: 0
+        }

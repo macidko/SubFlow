@@ -3,114 +3,78 @@
 
 /* Perfect Mimic Subtitle System - Zero Layout Shift, Left-Aligned Words */
 
+/* YouTube mimic variables (defaults) */
+:root {
+  --caption-font-size: 2.4vh;
+  --caption-text-color: #ffffff;
+  --caption-bg-color: #000000;
+  --caption-bg-opacity: 0.75;
+  --caption-edge-color: #000000;
+  --caption-position: 85%;
+}
+
 /* Hide native YouTube subtitles */
 .ytp-caption-window-container {
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-/* Mimic container - CENTERED FRAME, LEFT-ALIGNED CONTENT */
-.mimic-subtitle-container {
-  font-family: var(--font-family-subtitle) !important;
-  line-height: 1.4 !important;
-  color: var(--text-inverse) !important;
-  text-shadow:
-    1px 1px 2px var(--subtitle-shadow),
-    0 0 4px var(--subtitle-shadow-secondary) !important;
-  position: absolute !important;
-  bottom: var(--subtitle-bottom) !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: auto !important;
-  max-width: var(--subtitle-max-width) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important; /* LEFT ALIGN LINES */
-  justify-content: center !important;
-  gap: var(--subtitle-gap) !important;
-  z-index: var(--z-subtitle) !important;
-  pointer-events: none !important;
+/* YouTube-like caption container and segment rules */
+.ytp-caption-window-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--caption-position);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 68;
+  text-align: center;
 }
 
-/* Mimic line styling - LEFT ALIGNED WORDS, NO CENTERING */
-.mimic-line {
-  text-align: left !important;
-  white-space: pre-wrap !important;
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  display: block !important;
-  width: auto !important; /* FIT CONTENT */
-  max-width: none !important; /* NO MAX WIDTH LIMIT */
-  margin: 0 !important; /* NO AUTO CENTERING */
-  padding: var(--subtitle-line-padding-y) var(--subtitle-line-padding-x) !important;
-  background: var(--subtitle-bg) !important;
-  border-radius: var(--subtitle-line-radius) !important;
-  box-shadow: 0 2px 8px var(--subtitle-text-shadow) !important;
-  pointer-events: auto !important;
-  transition: none !important;
+.caption-window {
+  display: inline-block;
+  position: relative;
+  direction: ltr;
+  unicode-bidi: normal;
 }
 
-/* Word styling - ZERO PADDING to prevent layout shift */
-.mimic-word {
-  cursor: pointer !important;
-  display: inline !important;
-  transition: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: none !important;
-  box-shadow: none !important;
+.caption-window-transform {
+  display: block;
+}
+
+.caption-visual-line {
+  display: inline-block;
+  text-align: center;
+}
+
+.ytp-caption-segment {
+  font-size: var(--caption-font-size) !important;
+  color: var(--caption-text-color) !important;
+  background-color: var(--caption-bg-color) !important;
+  opacity: var(--caption-bg-opacity) !important;
+  padding: 0.4vh 0.8vh !important;
+  border-radius: 0.4vh !important;
+  display: inline-block !important;
   position: relative !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
 }
 
-.mimic-word:hover {
-  background: var(--word-hover-bg) !important;
-  box-shadow: 0 0 8px var(--word-hover-shadow) !important;
-  border-radius: var(--radius-sm) !important;
+/* Edge styles via data-edge attribute */
+.ytp-caption-segment[data-edge="dropshadow"] {
+  text-shadow: var(--caption-edge-color) 1.6px 1.6px 2.2px, var(--caption-edge-color) 1.6px 1.6px 3.6px, var(--caption-edge-color) 1.6px 1.6px 3.6px !important;
 }
-
-/* Unmarked words - plain white */
-.unmarked-word {
-  color: white !important;
-  font-weight: inherit !important;
+.ytp-caption-segment[data-edge="raised"] {
+  text-shadow: var(--caption-edge-color) 1px 1px, var(--caption-edge-color) 2px 2px !important;
 }
-
-/* Known words - Color only (NO padding/background) - BOLD for visibility */
-.known-word {
-  color: var(--known) !important;
-  font-weight: var(--font-weight-bold) !important;
-  text-decoration: none !important;
-  text-shadow: none !important; /* REMOVED GLOW */
+.ytp-caption-segment[data-edge="depressed"] {
+  text-shadow: var(--caption-edge-color) 1px 1px, var(--caption-edge-color) 0 0 !important;
 }
-
-.known-word:hover {
-  color: var(--known-hover) !important;
-  background: none !important; /* REMOVED BACKGROUND */
-  text-shadow: none !important; /* REMOVED GLOW */
-}
-
-/* Unknown words - Color only (NO padding/background) - BOLD for visibility */
-.unknown-word {
-  color: var(--learning) !important;
-  font-weight: var(--font-weight-bold) !important;
-  text-decoration: none !important;
-  text-shadow: none !important; /* REMOVED GLOW */
-}
-
-.unknown-word:hover {
-  color: var(--learning-hover) !important;
-  background: none !important; /* REMOVED BACKGROUND */
-  text-shadow: none !important; /* REMOVED GLOW */
-}
-
-/* Click feedback - subtle */
-.mimic-word:active {
-  opacity: var(--word-active-opacity) !important;
-}
-
-/* Remove line transitions that cause layout shift */
-.mimic-line {
-  transition: none !important;
+.ytp-caption-segment[data-edge="outline"] {
+  text-shadow: var(--caption-edge-color) 0px 0px 1.2px, var(--caption-edge-color) 0px 0px 1.2px, var(--caption-edge-color) 0px 0px 1.2px, var(--caption-edge-color) 0px 0px 1.2px, var(--caption-edge-color) 0px 0px 1.2px !important;
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
@@ -428,4 +392,9 @@
   .mimic-line {
     max-width: 75% !important;
   }
+}
+
+/* Ensure multiple segments on one visual line appear inline and backgrounds don't stack vertically */
+.ytp-caption-segment + .ytp-caption-segment {
+  margin-left: 0.25em !important;
 }
