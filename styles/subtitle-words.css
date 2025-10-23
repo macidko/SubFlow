@@ -50,15 +50,15 @@
   filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.8)) brightness(1.2) !important;
 }
 
-/* Unknown words - Color only (NO padding/background) - BOLD for visibility */
-.unknown-word {
+/* Unknown / Learning words - Color only (NO padding/background) - BOLD for visibility */
+.unknown-word, .learning-word {
   color: var(--learning) !important;
   font-weight: var(--font-weight-bold) !important;
   text-decoration: none !important;
   text-shadow: none !important; /* REMOVED GLOW */
 }
 
-.unknown-word:hover {
+.unknown-word:hover, .learning-word:hover {
   color: var(--learning-hover) !important;
   background: none !important; /* REMOVED BACKGROUND */
   text-shadow: none !important; /* REMOVED GLOW */
@@ -135,7 +135,7 @@
     filter: drop-shadow(0 0 16px #22c55e) brightness(1.4) !important;
   }
 
-  .unknown-word:hover {
+  .unknown-word:hover, .learning-word:hover {
     filter: drop-shadow(0 0 16px #fb923c) brightness(1.4) !important;
   }
 }

@@ -25,6 +25,25 @@
   pointer-events: auto !important;
 }
 
+/* Segment wrapper: holds background and vertical/horizontal padding using vh units to
+   reduce layout shifts when words change. Matches YouTube's ytp-caption-segment behavior. */
+.mimic-segment {
+  display: inline-block !important;
+  background: rgba(0, 0, 0, 0.78) !important;
+  padding: 0.45vh 0.9vh !important; /* vertical units to scale with viewport height */
+  border-radius: 0.35vh !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+  color: var(--caption-text-color, #ffffff) !important;
+}
+
+/* Small screens: reduce padding slightly */
+@media (max-width: 767px) {
+  .mimic-segment { padding: 0.35vh 0.6vh !important; border-radius: 0.3vh !important; }
+}
+
 /* Perfect Mimic Subtitle System - Zero Layout Shift, Left-Aligned Words */
 
 /* Hide native YouTube subtitles */

@@ -61,6 +61,7 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
       'mimic-word',
       'known-word',
       'learning-word',
+      'unknown-word',
       'unmarked-word',
       'mimic-subtitle-text'
     ];
@@ -706,27 +707,25 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     mimicLine.className = 'mimic-line';
 
     // LEFT ALIGNED WORDS, NO CENTERING - FIT CONTENT
+    // NOTE: move visual styling (background/padding) to .mimic-segment to avoid
+    // per-word layout shifts. mimicLine now acts as an inline container only.
     mimicLine.style.cssText = `
       position: relative;
       display: inline-block; /* match YouTube visual-line behavior */
       vertical-align: bottom;
-      padding: 6px 12px;
+      padding: 0;
       margin: 0;
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 3px;
+      background: transparent;
+      border-radius: 0;
       font-family: Netflix Sans, Helvetica Neue, Segoe UI, Roboto, Ubuntu, sans-serif;
       font-weight: 500;
       line-height: 1.4;
       text-align: left; /* inner content left aligned */
       letter-spacing: 0.01em;
       color: #ffffff;
-      text-shadow:
-        1px 1px 2px rgba(0, 0, 0, 0.9),
-        0 0 4px rgba(0, 0, 0, 0.7);
       white-space: pre-wrap;
       word-wrap: break-word;
       word-break: break-word;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
       pointer-events: auto;
       transition: none;
       width: auto; /* FIT CONTENT */
@@ -761,14 +760,18 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
       return;
     }
 
+    // Create a segment wrapper (mimic-segment) which will carry background and padding
     const words = this.extractWordsWithPositions(text);
+    const segment = document.createElement('span');
+    segment.className = 'mimic-segment';
+
     if (!words || words.length === 0) {
-      fragment.appendChild(document.createTextNode(text));
+      segment.appendChild(document.createTextNode(text));
     } else {
       let lastIndex = 0;
       for (const wordInfo of words) {
         if (wordInfo.start > lastIndex) {
-          fragment.appendChild(document.createTextNode(text.slice(lastIndex, wordInfo.start)));
+          segment.appendChild(document.createTextNode(text.slice(lastIndex, wordInfo.start)));
         }
 
         const cleanWord = wordInfo.word.toLowerCase();
@@ -776,39 +779,29 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
         const isUnknown = this.unknownWords.has(cleanWord);
 
         const span = document.createElement('span');
-        // Base class
-        if (this.validateClassName('mimic-word')) {
-          span.className = 'mimic-word';
-        }
-        
-        // Status class
-        if (isKnown && this.validateClassName('known-word')) {
-          span.classList.add('known-word');
-        } else if (isUnknown && this.validateClassName('learning-word')) {
-          span.classList.add('learning-word');
-        } else if (this.validateClassName('unmarked-word')) {
-          span.classList.add('unmarked-word');
-        }
+        if (this.validateClassName('mimic-word')) span.className = 'mimic-word';
 
-        // ARIA attributes for accessibility
+  if (isKnown && this.validateClassName('known-word')) span.classList.add('known-word');
+  else if (isUnknown && this.validateClassName('unknown-word')) span.classList.add('unknown-word');
+        else if (this.validateClassName('unmarked-word')) span.classList.add('unmarked-word');
+
         span.setAttribute('role', 'button');
         span.setAttribute('tabindex', '0');
-        span.setAttribute('aria-label', 
-          `${isKnown ? 'Known' : isUnknown ? 'Learning' : 'Unmarked'} word: ${wordInfo.text}. Press Enter or Space to view options`
-        );
+        span.setAttribute('aria-label', `${isKnown ? 'Known' : isUnknown ? 'Learning' : 'Unmarked'} word: ${wordInfo.text}. Press Enter or Space to view options`);
 
-        // set dataset and textContent (safe)
         span.dataset.word = cleanWord;
         span.textContent = wordInfo.text;
 
-        fragment.appendChild(span);
+        segment.appendChild(span);
         lastIndex = wordInfo.end;
       }
 
       if (lastIndex < text.length) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+        segment.appendChild(document.createTextNode(text.slice(lastIndex)));
       }
     }
+
+    fragment.appendChild(segment);
 
   // Atomic replace (clear then append fragment)
   mimicLine.textContent = '';
