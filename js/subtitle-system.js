@@ -433,15 +433,8 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     // Step 4: Setup observers
     this.setupObservers();
 
-    // Step 5: Initial scan and mirror - wait for fonts to avoid FOUT
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        this.scanAndMirror();
-      }).catch(() => this.scanAndMirror());
-    } else {
-      // older browsers
-      this.scanAndMirror();
-    }
+    // Step 5: Initial scan and mirror
+    this.scanAndMirror();
 
   }
 
@@ -477,14 +470,15 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     this.mimicContainer.style.cssText = `
       position: absolute;
       bottom: ${getResponsiveBottom()};
-      left: 50%;
-      transform: translateX(-50%);
-      width: auto;
-      max-width: 90%;
+      left: 0;
+      right: 0;
+      width: 100%;
+      max-width: none;
       display: flex;
       flex-direction: column;
-      align-items: flex-start; /* LEFT ALIGN LINES */
+      align-items: center; /* CENTER VISUAL LINES */
       justify-content: center;
+      text-align: center; /* center inline-block children */
       gap: 4px;
       z-index: 9999;
       pointer-events: none;
@@ -643,34 +637,18 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
 
     if (lineElements.length === 0) {
       // Fallback to segments if no visual lines
-      // Group segments by vertical position to avoid treating each segment as its own stacked line
-      const segments = Array.from(this.nativeContainer.querySelectorAll('.ytp-caption-segment'));
-
-      if (segments.length > 0) {
-        const groups = new Map();
-
-        segments.forEach(el => {
-          const rect = el.getBoundingClientRect();
-          // Round to nearest integer to group elements on same line (tolerance for sub-pixel)
-          const key = Math.round(rect.top);
-          if (!groups.has(key)) groups.set(key, []);
-          groups.get(key).push(el);
-        });
-
-        // Sort groups by vertical position (top -> bottom)
-        const keys = Array.from(groups.keys()).sort((a, b) => a - b);
-
-        keys.forEach(k => {
-          const groupEls = groups.get(k);
-          // Combine text from segments in the group preserving order
-          const text = groupEls.map(e => this.extractLineText(e)).join(' ').trim();
-          const representative = groupEls[0];
-          if (text && !seenTexts.has(text)) {
-            seenTexts.add(text);
-            lines.push({ element: representative, text: text, styles: window.getComputedStyle(representative) });
-          }
-        });
-      }
+      const segments = this.nativeContainer.querySelectorAll('.ytp-caption-segment');
+      segments.forEach(element => {
+        const text = this.extractLineText(element);
+        if (text.trim() && !seenTexts.has(text)) {
+          seenTexts.add(text);
+          lines.push({
+            element: element,
+            text: text,
+            styles: window.getComputedStyle(element)
+          });
+        }
+      });
     } else {
       // Use visual lines (preferred)
       lineElements.forEach(element => {
@@ -724,31 +702,38 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
   }
 
   createMimicLine(nativeLine) {
-    // Build YouTube-like nested structure
-    const captionWindowWrapper = document.createElement('div');
-    captionWindowWrapper.className = 'caption-window ytp-caption-window-bottom';
-
-    const transformWrapper = document.createElement('div');
-    transformWrapper.className = 'caption-window-transform';
-
-    const visualLine = document.createElement('span');
-    visualLine.className = 'caption-visual-line';
-
-    const segmentWrapper = document.createElement('span');
-    segmentWrapper.className = 'ytp-caption-segment';
-
-    // Apply mimic-line wrapper styling on outer container for consistent background and layout
     const mimicLine = document.createElement('div');
     mimicLine.className = 'mimic-line';
-    mimicLine.style.cssText = `position: relative; display: block; margin: 0; padding: 0; pointer-events: auto; width: auto;`;
 
-    // Append nested structure
-    visualLine.appendChild(segmentWrapper);
-    transformWrapper.appendChild(visualLine);
-    captionWindowWrapper.appendChild(transformWrapper);
-    mimicLine.appendChild(captionWindowWrapper);
+    // LEFT ALIGNED WORDS, NO CENTERING - FIT CONTENT
+    mimicLine.style.cssText = `
+      position: relative;
+      display: inline-block; /* match YouTube visual-line behavior */
+      vertical-align: bottom;
+      padding: 6px 12px;
+      margin: 0;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 3px;
+      font-family: Netflix Sans, Helvetica Neue, Segoe UI, Roboto, Ubuntu, sans-serif;
+      font-weight: 500;
+      line-height: 1.4;
+      text-align: left; /* inner content left aligned */
+      letter-spacing: 0.01em;
+      color: #ffffff;
+      text-shadow:
+        1px 1px 2px rgba(0, 0, 0, 0.9),
+        0 0 4px rgba(0, 0, 0, 0.7);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      word-break: break-word;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      pointer-events: auto;
+      transition: none;
+      width: auto; /* FIT CONTENT */
+      max-width: none; /* NO MAX WIDTH LIMIT */
+    `;
 
-    // Fill content
+    // Set initial text with colorization
     this.setMimicLineContent(mimicLine, nativeLine.text);
 
     return mimicLine;
@@ -777,10 +762,6 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     }
 
     const words = this.extractWordsWithPositions(text);
-
-    // Locate the segment container we created in createMimicLine
-    const segmentContainer = mimicLine.querySelector('.ytp-caption-segment') || mimicLine;
-
     if (!words || words.length === 0) {
       fragment.appendChild(document.createTextNode(text));
     } else {
@@ -794,21 +775,33 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
         const isKnown = this.knownWords.has(cleanWord);
         const isUnknown = this.unknownWords.has(cleanWord);
 
-        // outer word span (clickable)
-        const outer = document.createElement('span');
-        outer.className = 'mimic-word';
+        const span = document.createElement('span');
+        // Base class
+        if (this.validateClassName('mimic-word')) {
+          span.className = 'mimic-word';
+        }
+        
+        // Status class
+        if (isKnown && this.validateClassName('known-word')) {
+          span.classList.add('known-word');
+        } else if (isUnknown && this.validateClassName('learning-word')) {
+          span.classList.add('learning-word');
+        } else if (this.validateClassName('unmarked-word')) {
+          span.classList.add('unmarked-word');
+        }
 
-        if (isKnown) outer.classList.add('known-word');
-        else if (isUnknown) outer.classList.add('unknown-word');
-        else outer.classList.add('unmarked-word');
+        // ARIA attributes for accessibility
+        span.setAttribute('role', 'button');
+        span.setAttribute('tabindex', '0');
+        span.setAttribute('aria-label', 
+          `${isKnown ? 'Known' : isUnknown ? 'Learning' : 'Unmarked'} word: ${wordInfo.text}. Press Enter or Space to view options`
+        );
 
-        outer.setAttribute('role', 'button');
-        outer.setAttribute('tabindex', '0');
-        outer.setAttribute('aria-label', `${isKnown ? 'Known' : isUnknown ? 'Learning' : 'Unmarked'} word: ${wordInfo.text}. Press Enter or Space to view options`);
-        outer.dataset.word = cleanWord;
-        outer.textContent = wordInfo.text;
+        // set dataset and textContent (safe)
+        span.dataset.word = cleanWord;
+        span.textContent = wordInfo.text;
 
-        fragment.appendChild(outer);
+        fragment.appendChild(span);
         lastIndex = wordInfo.end;
       }
 
@@ -818,15 +811,8 @@ window.PerfectMimicSubtitleSystem = class PerfectMimicSubtitleSystem {
     }
 
   // Atomic replace (clear then append fragment)
-  // If we have a .ytp-caption-segment inside mimicLine, append there; otherwise append to mimicLine
-  const seg = mimicLine.querySelector('.ytp-caption-segment');
-  if (seg) {
-    seg.textContent = '';
-    seg.appendChild(fragment);
-  } else {
-    mimicLine.textContent = '';
-    mimicLine.appendChild(fragment);
-  }
+  mimicLine.textContent = '';
+  mimicLine.appendChild(fragment);
 
     // Setup click handlers
     this.setupWordClickHandlers(mimicLine);
